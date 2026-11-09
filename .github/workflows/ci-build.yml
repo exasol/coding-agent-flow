@@ -27,3 +27,16 @@ jobs:
 
       - name: Test
         run: go test ./...
+
+  # This job ensures inputs have been executed successfully.
+  allow-merge:
+    name: Allow Merge
+    runs-on: "ubuntu-26.04"
+    permissions:
+      contents: read
+    needs:
+      - build
+    steps:
+      - name: Branch Protection
+        run: echo "All required checks passed. Merge allowed."
+
