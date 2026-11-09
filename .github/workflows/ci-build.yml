@@ -31,12 +31,17 @@ jobs:
   # This job ensures inputs have been executed successfully.
   allow-merge:
     name: Allow Merge
+    needs:
+      - build
+    if: ${{ always() }}
     runs-on: "ubuntu-26.04"
     permissions:
       contents: read
-    needs:
-      - build
+
     steps:
+      - name: Require successful build
+        run: test "${{ needs.build.result }}" = "success"
+
       - name: Branch Protection
         run: echo "All required checks passed. Merge allowed."
 
