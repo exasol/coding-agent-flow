@@ -9,3 +9,4 @@ Initial release of coding-agent-flow.
 ## Features
 
 * Initial implementation.
+* #3: Added detection of requirements documents in projects.
