@@ -1,0 +1,47 @@
+name: Go
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.26.8"
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./...
+
+  # This job ensures inputs have been executed successfully.
+  allow-merge:
+    name: Allow Merge
+    needs:
+      - build
+    if: ${{ always() }}
+    runs-on: "ubuntu-26.04"
+    permissions:
+      contents: read
+
+    steps:
+      - name: Require successful build
+        run: test "${{ needs.build.result }}" = "success"
+
+      - name: Branch Protection
+        run: echo "All required checks passed. Merge allowed."
+
