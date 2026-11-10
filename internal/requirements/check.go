@@ -2,9 +2,10 @@
 package requirements
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+
+	exaerror "github.com/exasol/error-reporting-go"
 )
 
 const requirementsDirectory = "doc/requirements"
@@ -16,7 +17,10 @@ func HasDocument(projectRoot string) (bool, error) {
 		return false, nil
 	}
 	if err != nil {
-		return false, fmt.Errorf("read requirements directory: %w", err)
+		return false, exaerror.New("E-CAF-1").
+			Message("Failed to read requirements directory: {{error|uq}}.").
+			Parameter("error", err).
+			Mitigation("Ensure that doc/requirements is a readable directory.")
 	}
 
 	for _, entry := range entries {
