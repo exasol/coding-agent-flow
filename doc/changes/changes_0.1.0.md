@@ -8,5 +8,5 @@ Initial release of coding-agent-flow.
 
 ## Features
 
-* Initial implementation.
+* #1: Initial implementation of CI workflow and release documentation.
 * #3: Added detection of requirements documents in projects.
