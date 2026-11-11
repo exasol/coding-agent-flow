@@ -12,6 +12,7 @@ const requirementsDirectory = "doc/requirements"
 
 // HasDocument checks if a requirements document exists in the project.
 func HasDocument(projectRoot string) (bool, error) {
+	// [impl~requirements-document-detection~1 -> req~requirements-document-detection~1]
 	entries, err := os.ReadDir(filepath.Join(projectRoot, requirementsDirectory))
 	if os.IsNotExist(err) {
 		return false, nil
@@ -24,9 +25,18 @@ func HasDocument(projectRoot string) (bool, error) {
 	}
 
 	for _, entry := range entries {
-		if entry.Type().IsRegular() && filepath.Ext(entry.Name()) == ".md" {
+		if entry.Type().IsRegular() && isSupportedExtension(filepath.Ext(entry.Name())) {
 			return true, nil
 		}
 	}
 	return false, nil
+}
+
+func isSupportedExtension(extension string) bool {
+	switch extension {
+	case ".md", ".rst":
+		return true
+	default:
+		return false
+	}
 }
