@@ -13,7 +13,7 @@ Initial release of coding-agent-flow.
 
 ## Refactoring
 
-* #5: Add a file error_code_config.yml defining the short tag
+* #5: Add a file `error_code_config.yml` defining the short tag
 
 ## Documentation
 
