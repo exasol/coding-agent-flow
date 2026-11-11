@@ -10,6 +10,7 @@ Initial release of coding-agent-flow.
 
 * #1: Initial implementation of CI workflow and release documentation.
 * #3: Added detection of requirements documents in projects.
+* #13: Added detection of reStructuredText (`.rst`) requirements documents.
 
 ## Refactoring
 
