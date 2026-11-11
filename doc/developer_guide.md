@@ -1,6 +1,16 @@
 # Developer Guide
 
-## Continuous integration
+## Requirements Document Detection
+
+CAF recognizes a direct regular file in `doc/requirements/` as a requirements
+document when it uses one of these extensions:
+
+- `.md` for Markdown;
+- `.rst` for reStructuredText.
+
+The check does not search subdirectories or validate document content.
+
+## Continuous Integration
 
 The GitHub Actions workflow in `.github/workflows/ci-build.yml` runs on every
 pull request and on pushes to `main`. It uses Go 1.26.8 and verifies:
@@ -11,7 +21,7 @@ pull request and on pushes to `main`. It uses Go 1.26.8 and verifies:
 The repository's root `go.mod` defines its module. Add `go.sum` when the
 project introduces external dependencies.
 
-## Managing release notes
+## Managing Release Notes
 
 Keep one Markdown file per released version under `doc/changes/`, named
 `changes_<version>.md`, for example `changes_0.2.0.md`. Add the newest version
