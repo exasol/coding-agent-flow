@@ -1,5 +1,15 @@
 # Developer Guide
 
+## Requirements document detection
+
+CAF recognizes a direct regular file in `doc/requirements/` as a requirements
+document when it uses one of these extensions:
+
+- `.md` for Markdown;
+- `.rst` for reStructuredText.
+
+The check does not search subdirectories or validate document content.
+
 ## Continuous integration
 
 The GitHub Actions workflow in `.github/workflows/ci-build.yml` runs on every
