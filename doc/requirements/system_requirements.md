@@ -12,3 +12,39 @@ Supported extensions:
 - `.rst`
 
 Needs: impl, utest
+
+Rationale: CAF needs a predictable way to identify requirements documents
+before it can validate their contents.
+
+## Spec Validation
+
+`feat~requirements-validation~1`
+
+CAF shall validate declared OFT requirement metadata in requirements documents
+for a supplied source project and return a machine-facing validation result.
+
+Status: draft
+
+Needs: req
+
+### Spec Structure Validation
+
+`req~requirement-structure-validation~1`
+
+CAF shall inspect every OFT requirement item (`req~...~revision`) in every
+recognized requirements document of a supplied source project. For each item,
+CAF shall require non-empty `Needs` and `Rationale` fields. CAF shall return a
+`RequirementStructure` response whose `valid` boolean field is `true` only
+when every inspected OFT requirement satisfies both field rules.
+
+Status: draft
+
+Covers:
+
+- `feat~requirements-validation~1`
+
+Needs: scn, impl, at
+
+Rationale: Requirements need both an explicit downstream traceability
+expectation and a recorded reason so that automated checks can identify
+incomplete requirement records before implementation begins.

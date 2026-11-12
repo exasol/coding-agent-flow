@@ -6,6 +6,10 @@ Code name: Initial release
 
 Initial release of coding-agent-flow.
 
+## Documentation
+
+* #33: Define Requirement document structure validation domain contract
+
 ## Features
 
 * #1: Initial implementation of CI workflow and release documentation.
