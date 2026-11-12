@@ -33,10 +33,6 @@ Coding Agent Flow is a workflow tool whose behavior will grow across requirement
 
 Changes to the architecture should update the affected architecture decisions before or alongside the code and tests. Contributors must preserve existing OpenFastTrace identifiers when their meaning is unchanged and add links only where they have supporting evidence.
 
-### Status
-
-Accepted.
-
 Needs: impl
 
 Tags: `traceability`, `openfasttrace`
