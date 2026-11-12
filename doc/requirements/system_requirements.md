@@ -4,7 +4,7 @@
 
 `req~requirements-document-detection~1`
 
-CAF shall recognize a direct regular file in `doc/requirements/` as a requirements document when its extension is supported.
+CAF recognizes a direct regular file in `doc/requirements/` as a requirements document when its extension is supported.
 
 Supported extensions:
 
@@ -20,8 +20,8 @@ before it can validate their contents.
 
 `feat~requirements-validation~1`
 
-CAF shall validate declared OFT requirement metadata in requirements documents
-for a supplied source project and return a machine-facing validation result.
+CAF validates declared OFT requirement metadata in requirements documents
+for a supplied source project and returns a machine-facing validation result.
 
 Status: draft
 
@@ -31,9 +31,9 @@ Needs: req
 
 `req~requirement-structure-validation~1`
 
-CAF shall inspect every OFT requirement item (`req~...~revision`) in every
+CAF inspects every OFT requirement item (`req~...~revision`) in every
 recognized requirements document of a supplied source project. For each item,
-CAF shall require non-empty `Needs` and `Rationale` fields. CAF shall return a
+CAF requires non-empty `Needs` and `Rationale` fields. CAF returns a
 `RequirementStructure` response whose `valid` boolean field is `true` only
 when every inspected OFT requirement satisfies both field rules.
 

@@ -8,7 +8,7 @@ Initial release of coding-agent-flow.
 
 ## Documentation
 
-* #33: Define Requirement document structure validation domain contract
+* #33: Requirement Document Structure Validator
 
 ## Features
 
