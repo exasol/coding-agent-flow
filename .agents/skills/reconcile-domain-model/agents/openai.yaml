@@ -1,0 +1,7 @@
+interface:
+  display_name: "Reconcile domain model"
+  short_description: "Reconcile Gherkin and domain models"
+  default_prompt: "Use $reconcile-domain-model to reconcile selected CAF Gherkin scenarios with their bounded-context domain model."
+
+policy:
+  allow_implicit_invocation: false

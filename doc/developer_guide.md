@@ -22,6 +22,19 @@ pinned Mermaid renderer; do not download one merely to validate a diagram.
 Review the rendered Markdown in the normal documentation viewer and report
 that renderer gap when it applies.
 
+## Reconcile Domain Model
+
+Use the `reconcile domain model` command to apply the project-local
+`$reconcile-domain-model` skill when Gherkin scenarios and domain
+documentation must be synchronized. The command resolves a scenario list's
+bounded context from
+`doc/requirements/scenarios/<bounded-context>/<feature>/<use-case>/` and
+reconciles it with `doc/requirements/domain/<bounded-context>/`. When several
+scenario lists are selected, it groups them by bounded context and reconciles
+each context independently. It keeps global vocabulary in
+`doc/requirements/domain/glossary.md`, context vocabulary in the matching
+context glossary, and canonical Gherkin only in `doc/requirements/scenarios/`.
+
 ## Requirements Document Detection
 
 CAF recognizes a direct regular file in `doc/requirements/` as a requirements
