@@ -1,0 +1,7 @@
+interface:
+  display_name: "Reconcile diagrams"
+  short_description: "Reconcile readable domain diagrams"
+  default_prompt: "Use $reconcile-diagrams to reconcile diagrams for the selected CAF domain change."
+
+policy:
+  allow_implicit_invocation: false

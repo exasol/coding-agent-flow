@@ -13,6 +13,9 @@ artifacts but does not own, modify, or persist them.
 
 ## Context diagram
 
+This diagram answers who interacts with Spec Validation and which request and
+response cross its boundary.
+
 ```mermaid
 flowchart LR
     caller["Automation Caller"]
@@ -21,13 +24,17 @@ flowchart LR
     subgraph spec_validation["Spec Validation bounded context"]
         validator["Requirement Document<br/>Structure Validator"]
         response["RequirementStructure<br/>Response"]
-        validator --> response
+        validator -->|derives| response
     end
 
     caller -->|Source Project Path| validator
     validator -->|reads Requirement Documents| project
     response -->|valid| caller
 ```
+
+Text alternative: an Automation Caller supplies a Source Project Path to Spec
+Validation. The bounded context reads Requirement Documents from the external
+Source Project and returns the `valid` value in a RequirementStructure response.
 
 ## Actor and input
 

@@ -22,6 +22,9 @@ recorded in [failures.md](failures.md).
 
 ## Use-case flow diagram
 
+This diagram answers how an Automation Caller invokes the use case and
+receives its validation outcome.
+
 ```mermaid
 flowchart LR
     caller["Automation Caller"]
@@ -29,13 +32,19 @@ flowchart LR
     validator["Requirement Document<br/>Structure Validator"]
     project["Source Project"]
     documents["Requirement Documents"]
-    response["RequirementStructure<br/>valid: Boolean"]
+    response["RequirementStructure<br/>Response"]
 
     caller --> request --> validator
-    validator -->|reads| project -->|contains| documents
-    validator -->|evaluates Needs and Rationale| documents
+    request -->|identifies| project
+    project -->|contains| documents
+    validator -->|reads and evaluates| documents
     validator -->|returns| response --> caller
 ```
+
+Text alternative: the Automation Caller requests validation using a Source
+Project Path. Requirement Document Structure Validator reads the Source
+Project and its Requirement Documents, evaluates Needs and Rationale, and
+returns a RequirementStructure response containing `valid`.
 
 ## Acceptance scenarios
 

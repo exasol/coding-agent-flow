@@ -8,6 +8,9 @@ read-only spec-structure validation contract. See
 
 ## Domain model diagram
 
+This diagram answers how Source Project, Requirement Document, their value
+objects, and the RequirementStructure response relate.
+
 ```mermaid
 flowchart LR
     subgraph source_project["Source Project"]
@@ -25,17 +28,28 @@ flowchart LR
         document --> rationale
     end
 
-    response["RequirementStructure<br/>Read Model"]
-    project -. "is validated as" .-> response
+    response["RequirementStructure<br/>Response"]
+    project -. "derives" .-> response
 ```
 
+Text alternative: a Source Project has one Source Project Path and contains
+zero or more Requirement Documents. Every Requirement Document has an OFT
+Requirement Identifier, Needs, and Rationale value object. Validation derives
+one RequirementStructure response from the Source Project.
+
 ## Entity relationship diagram
+
+This diagram answers the cardinality of the Source Project relationships.
 
 ```mermaid
 erDiagram
     SOURCE_PROJECT ||--o{ REQUIREMENT_DOCUMENT : contains
     SOURCE_PROJECT ||--|| REQUIREMENT_STRUCTURE : is_validated_as
 ```
+
+Text alternative: one Source Project contains zero or more Requirement
+Documents and derives exactly one RequirementStructure response for a
+validation request.
 
 The relationships are read-only views of source-project content. Deleting,
 moving, or changing a document while validation is in progress is outside this

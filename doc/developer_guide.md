@@ -1,5 +1,27 @@
 # Developer Guide
 
+## Reconcile Diagrams
+
+Use the `reconcile diagrams` command to apply the project-local
+`$reconcile-diagrams` skill when a CAF domain diagram must be added, repaired,
+or reviewed. The skill keeps Mermaid diagrams in their owning bounded-context
+documents under `doc/requirements/domain/<bounded-context>/`:
+
+- `context_and_scope.md` answers who interacts with the context and what
+  crosses its boundary;
+- `entity_model_relationship.md` answers how entities, value objects, and
+  relationships fit together; and
+- `use_cases.md` answers how an actor invokes a use case and receives its
+  outcome.
+
+The command reconciles a diagram with the glossary, model, invariants, use case,
+and Gherkin scenarios, and synchronizes each diagram with its corresponding
+bounded-context documents. It does not infer undocumented technical behavior
+or replace the surrounding prose and specifications. CAF currently has no
+pinned Mermaid renderer; do not download one merely to validate a diagram.
+Review the rendered Markdown in the normal documentation viewer and report
+that renderer gap when it applies.
+
 ## Requirements Document Detection
 
 CAF recognizes a direct regular file in `doc/requirements/` as a requirements
