@@ -14,7 +14,7 @@ therefore makes the result invalid. If no Requirement Documents are present,
 the result is valid because no item violates the rule.
 
 The use case is specified by
-`req~requirement-structure-validation~1`. It does not define a command name,
+`req~spec-structure-validation~1`. It does not define a command name,
 JSON serialization, diagnostics, filesystem-error handling, or exit status.
 The use-case boundary is described in
 [context_and_scope.md](context_and_scope.md); the deferred failure contract is

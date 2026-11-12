@@ -18,7 +18,7 @@ before it can validate their contents.
 
 ## Spec Validation
 
-`feat~requirements-validation~1`
+`feat~spec-validation~1`
 
 CAF validates declared OFT requirement metadata in requirements documents
 for a supplied source project and returns a machine-facing validation result.
@@ -29,7 +29,7 @@ Needs: req
 
 ### Spec Structure Validation
 
-`req~requirement-structure-validation~1`
+`req~spec-structure-validation~1`
 
 CAF inspects every OFT requirement item (`req~...~revision`) in every
 recognized requirements document of a supplied source project. For each item,
@@ -41,7 +41,7 @@ Status: draft
 
 Covers:
 
-- `feat~requirements-validation~1`
+- `feat~spec-validation~1`
 
 Needs: scn, impl, at
 

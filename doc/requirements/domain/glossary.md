@@ -13,7 +13,7 @@ context owns its domain-specific vocabulary in its own `glossary.md` file.
 | Source Project Path | An immutable value object holding the caller-supplied path that identifies a Source Project for one operation. It does not normalize the path or establish filesystem accessibility. |
 | Requirements document | A source artifact in a Source Project that can declare OFT items. Recognition policy is owned by the context that consumes it. |
 | Spec | Structured specification documentation that records a product capability, its requirements, and the evidence expected to realize and verify them. In OFT tracing, a Spec connects a `feat` item to its `req` items; a requirement's `Needs` field declares expected downstream evidence such as `scn`, `impl`, and `at`; scenarios, implementation, and acceptance tests then provide traceable coverage back to that requirement. A Spec is the human-maintained source of intent and traceability, not implementation or test evidence itself. |
-| OFT Requirement | An OFT item whose identifier type is `req`, such as `req~requirement-structure-validation~1`. |
+| OFT Requirement | An OFT item whose identifier type is `req`, such as `req~spec-structure-validation~1`. |
 | OFT Requirement Identifier | An immutable value object identifying an OFT Requirement. Its OFT item type is `req`. |
 | Needs | The OFT field that states downstream artifact types expected to provide traceability evidence for an item. A bounded context may define additional syntax or non-blankness rules. |
 | Rationale | The OFT field that records why an item is needed. A bounded context may define additional content or non-blankness rules. |

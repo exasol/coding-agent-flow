@@ -2,7 +2,7 @@
 
 This document is the rule catalog for the Requirement Document Structure
 Validator use case. The rules implement
-`req~requirement-structure-validation~1`.
+`req~spec-structure-validation~1`.
 
 | Rule | Owner | Statement |
 | --- | --- | --- |
