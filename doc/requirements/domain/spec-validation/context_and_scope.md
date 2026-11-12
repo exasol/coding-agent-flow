@@ -11,6 +11,24 @@ This bounded context owns the terms, domain model, rules, use case, and
 RequirementStructure response documented in this directory. It reads source
 artifacts but does not own, modify, or persist them.
 
+## Context diagram
+
+```mermaid
+flowchart LR
+    caller["Automation Caller"]
+    project["Source Project<br/>External source artifact"]
+
+    subgraph spec_validation["Spec Validation bounded context"]
+        validator["Requirement Document<br/>Structure Validator"]
+        response["RequirementStructure<br/>Response"]
+        validator --> response
+    end
+
+    caller -->|Source Project Path| validator
+    validator -->|reads Requirement Documents| project
+    response -->|valid| caller
+```
+
 ## Actor and input
 
 An automation caller supplies a Source Project Path. The caller invokes the

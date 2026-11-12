@@ -6,6 +6,29 @@ read-only spec-structure validation contract. See
 [value objects](value_objects.md) for immutable concepts, and
 [invariants](invariants.md) for validation rules.
 
+## Domain model diagram
+
+```mermaid
+flowchart LR
+    subgraph source_project["Source Project"]
+        project["Source Project<br/>Entity"]
+        path["Source Project Path<br/>Value Object"]
+        document["Requirement Document<br/>Entity"]
+        identifier["OFT Requirement Identifier<br/>Value Object"]
+        needs["Needs<br/>Value Object"]
+        rationale["Rationale<br/>Value Object"]
+
+        project --> path
+        project -->|contains 0..*| document
+        document --> identifier
+        document --> needs
+        document --> rationale
+    end
+
+    response["RequirementStructure<br/>Read Model"]
+    project -. "is validated as" .-> response
+```
+
 ## Entity relationship diagram
 
 ```mermaid

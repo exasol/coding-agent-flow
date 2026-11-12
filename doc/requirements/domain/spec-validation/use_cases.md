@@ -20,6 +20,23 @@ The use-case boundary is described in
 [context_and_scope.md](context_and_scope.md); the deferred failure contract is
 recorded in [failures.md](failures.md).
 
+## Use-case flow diagram
+
+```mermaid
+flowchart LR
+    caller["Automation Caller"]
+    request["Validate Requirement Document Structure<br/>Source Project Path"]
+    validator["Requirement Document<br/>Structure Validator"]
+    project["Source Project"]
+    documents["Requirement Documents"]
+    response["RequirementStructure<br/>valid: Boolean"]
+
+    caller --> request --> validator
+    validator -->|reads| project -->|contains| documents
+    validator -->|evaluates Needs and Rationale| documents
+    validator -->|returns| response --> caller
+```
+
 ## Acceptance scenarios
 
 The canonical Gherkin scenarios are in
