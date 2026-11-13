@@ -1,5 +1,59 @@
 # Developer Guide
 
+## Machine Validation CLI
+
+`doc~caf-machine-validation~1`
+
+Covers:
+
+- `req~caf-machine-validation~1`
+
+CAF provides one non-interactive validation command:
+
+```shell
+caf validate
+```
+
+Without an agent option, the command is intended for CI. It prints a JSON report and exits with 0 for pass, 1 for a validation finding, or 2 for a tool failure.
+
+## Project Configuration Discovery
+
+`doc~caf-project-discovery~1`
+
+Covers:
+
+- `req~caf-project-discovery~1`
+- `req~caf-validation-routing~1`
+
+CAF searches from the invocation working directory toward the filesystem root for `.caf.yaml`. The nearest file defines the project root and validation policy:
+
+```yaml
+version: 1
+validators:
+  - requirements-document
+```
+
+The initial supported validator identifier is `requirements-document`. OFT execution will be added by the OFT work package without adding another public command.
+
+## Codex Stop Hook
+
+`doc~caf-codex-stop-hook~1`
+
+Covers:
+
+- `req~caf-agent-selection~1`
+- `req~caf-codex-stop-response~1`
+
+The initial agent integration supports Codex:
+
+```shell
+caf validate --agent codex
+```
+
+The Codex `Stop` hook supplies its JSON object through standard input. CAF uses the payload's `cwd` for project discovery and writes only Codex response JSON to standard output. A pass produces `{}`. A finding or tool failure produces a `decision: block` response so Codex continues working. If `stop_hook_active` is already true, CAF allows the turn to stop to prevent an uncontrolled continuation loop.
+
+Hook installation is outside this command's scope. See the [Codex Hooks documentation](https://learn.chatgpt.com/docs/hooks) for the current provider protocol.
+
 ## Requirements Document Detection
 
 CAF recognizes a direct regular file in `doc/requirements/` as a requirements
