@@ -29,10 +29,6 @@ The system uses OpenFastTrace to analyze explicitly declared traceability links.
 
 Coding Agent Flow is a workflow tool whose behavior will grow across requirements detection, agent orchestration, and related project checks. Traceability makes the reasoning behind that behavior reviewable and helps prevent system requirements, architecture decisions, code, and tests from drifting apart.
 
-### Consequences
-
-Changes to the architecture should update the affected architecture decisions before or alongside the code and tests. Contributors must preserve existing OpenFastTrace identifiers when their meaning is unchanged and add links only where they have supporting evidence.
-
 Needs: impl
 
 Tags: `traceability`, `openfasttrace`
