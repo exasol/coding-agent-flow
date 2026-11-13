@@ -160,17 +160,6 @@ scenario wording, invoke `$reconcile-domain-model`. If it changes a context
 boundary, actor, request, response, or relationship shown in a diagram, invoke
 `$reconcile-diagrams` too.
 
-## Current readiness assessment
-
-The current Spec Validation scenarios define `RequirementStructure.valid`, but
-the contract explicitly defers the public CLI command, JSON schema,
-diagnostics, and exit status. Generate the six scenario bindings now. Until a
-public Requirement Document Structure Validator boundary, its deterministic
-fixtures, and bindings exist, each affected acceptance test is expected red
-with the runner's explicit missing-binding or missing-fixture failure. The
-tests become green only after that public contract and the documented behavior
-are implemented.
-
 ## Handoff
 
 Report the scenario-to-context-to-test mapping, test coverage added or
