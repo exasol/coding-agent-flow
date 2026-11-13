@@ -1,0 +1,29 @@
+scenario scn~oft-requirement-covers-feature~1
+file features.md
+# Valid Fixture Feature
+
+feat~valid-fixture-feature~1
+
+Needs: req
+end file
+
+file requirements.md
+# Valid Fixture Requirement
+
+req~valid-fixture-requirement~1
+
+Covers:
+
+- feat~valid-fixture-feature~1
+end file
+end scenario
+
+scenario scn~oft-requirement-does-not-cover-feature~1
+file features.md
+# Invalid Fixture Feature
+
+feat~invalid-fixture-feature~1
+
+Needs: req
+end file
+end scenario

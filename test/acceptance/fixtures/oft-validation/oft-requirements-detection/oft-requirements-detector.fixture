@@ -1,0 +1,41 @@
+scenario scn~oft-requirements-rst-in-doc-requirements~1
+file doc/requirements/requirements.rst
+Valid reStructuredText requirements document
+==========================================
+
+req~valid-doc-requirements-rst~1
+end file
+end scenario
+
+scenario scn~oft-requirements-rst-in-root~1
+file requirements.rst
+Valid root reStructuredText requirements document
+===============================================
+
+req~valid-root-rst~1
+end file
+end scenario
+
+scenario scn~oft-requirements-markdown-in-root~1
+file requirements.md
+# Valid Root Markdown Requirements Document
+
+req~valid-root-markdown~1
+end file
+end scenario
+
+scenario scn~oft-requirements-text-in-doc-requirements~1
+file doc/requirements/requirements.txt
+Invalid text requirements document.
+
+req~invalid-doc-requirements-text~1
+end file
+end scenario
+
+scenario scn~oft-requirements-text-in-root~1
+file requirements.txt
+Invalid root text requirements document.
+
+req~invalid-root-text~1
+end file
+end scenario

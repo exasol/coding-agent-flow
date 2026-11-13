@@ -1,0 +1,3 @@
+interface:
+  display_name: "Reconcile Acceptance Implementation"
+  short_description: "Implement approved acceptance contracts"
