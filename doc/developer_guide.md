@@ -35,6 +35,24 @@ each context independently. It keeps global vocabulary in
 `doc/requirements/domain/glossary.md`, context vocabulary in the matching
 context glossary, and canonical Gherkin only in `doc/requirements/scenarios/`.
 
+## Reconcile Acceptance Tests
+
+Use the `reconcile acceptance tests` command to apply the project-local
+`$reconcile-acceptance-tests` skill when acceptance evidence must be aligned
+with Gherkin scenarios, use cases, and the domain model. The skill resolves
+the bounded context from the scenario path, maps its scenarios to one
+black-box Go acceptance test each, and checks that tests use an approved public
+boundary rather than an internal package. It creates those tests before
+production code and fixtures, so new-feature and bug-fix tests are expected to
+be red until their public binding exists. The generic runner reports missing
+bindings or fixtures as executable failures, rather than compilation errors or
+skipped tests. It keeps `.feature` files as the canonical BDD specification.
+CAF's repository-owned Go runner is for CAF's own public use cases: it maps a
+canonical scenario ID to a fixture, one public-boundary invocation, and its
+assertions. It is not a cross-language test-execution framework. The runner
+must preserve canonical scenario IDs and requires deterministic binding
+validation.
+
 ## Requirements Document Detection
 
 CAF recognizes a direct regular file in `doc/requirements/` as a requirements

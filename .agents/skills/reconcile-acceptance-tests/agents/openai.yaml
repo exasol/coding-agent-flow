@@ -1,0 +1,7 @@
+interface:
+  display_name: "Reconcile acceptance tests"
+  short_description: "Reconcile BDD acceptance evidence"
+  default_prompt: "Use $reconcile-acceptance-tests to reconcile CAF acceptance tests with Gherkin, use cases, and the domain model."
+
+policy:
+  allow_implicit_invocation: false
