@@ -8,7 +8,7 @@ Feature: OFT Tracing Validator
     Given a target project path containing `features.md` with the OFT Feature `feat~valid-fixture-feature~1` that needs an OFT Requirement
     And `requirements.md` with the OFT Requirement `req~valid-fixture-requirement~1` that covers `feat~valid-fixture-feature~1`
     When the caller validates OFT tracing for the target project path
-    Then the OFTValidation response has valid `true`
+    Then the OFT Validation response has valid `true`
 
   @id:scn~oft-requirement-does-not-cover-feature~1
   # Covers: req~oft-tracing-validation~1
@@ -17,4 +17,4 @@ Feature: OFT Tracing Validator
     Given a target project path containing `features.md` with the OFT Feature `feat~invalid-fixture-feature~1` that needs an OFT Requirement
     And `feat~invalid-fixture-feature~1` stays uncovered
     When the caller validates OFT tracing for the target project path
-    Then the OFTValidation response has valid `false`
+    Then the OFT Validation response has valid `false`

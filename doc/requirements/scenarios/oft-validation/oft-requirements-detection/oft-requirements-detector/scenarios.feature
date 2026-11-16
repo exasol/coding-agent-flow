@@ -7,7 +7,7 @@ Feature: OFT Requirements Detector
   Scenario Outline: Detect OFT Requirements by file location and extension
     Given a target project path containing the OFT Requirement `<req_id>` in file `<location>`
     When the caller validates OFT tracing for the target project path
-    Then the OFTValidation response reports `<found>` for `req` element ID `<req_id>`
+    Then the OFT Validation response reports `<found>` for `req` specification item ID `<req_id>`
 
     Examples:
       | location                             | req_id                              | found |

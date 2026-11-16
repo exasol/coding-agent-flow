@@ -14,7 +14,7 @@ Rationale: CAF uses a consistent input set for OFT validation.
 
 `req~oft-tracing-validation~1`
 
-CAF validates OFT Elements in a Target Project and returns an `OFTValidation` response. `valid` reports the validation result. `oftElementIDs` maps each OFT Element Type to its OFT Element IDs.
+CAF validates OFT Specification Items in the Target Project and returns an `OFTValidation` response. `valid` reports the validation result. `oftSpecificationItemIDs` maps each OFT Artifact Type to its OFT Specification Item IDs.
 
 Covers:
 
