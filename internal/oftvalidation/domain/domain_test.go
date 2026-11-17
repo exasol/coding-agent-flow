@@ -6,16 +6,16 @@ import (
 	"testing"
 )
 
-func mustParse(t *testing.T, text string) OFTElementID {
+func mustParse(t *testing.T, text string) OFTSpecificationItemID {
 	t.Helper()
-	id, err := ParseOFTElementID(text)
+	id, err := ParseOFTSpecificationItemID(text)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return id
 }
 
-func TestParseOFTElementIDReadsTypeNameAndRevision(t *testing.T) {
+func TestParseOFTSpecificationItemIDReadsTypeNameAndRevision(t *testing.T) {
 	id := mustParse(t, "req~oft-validation~2")
 
 	if id.Type() != "req" || id.String() != "req~oft-validation~2" {
@@ -23,18 +23,18 @@ func TestParseOFTElementIDReadsTypeNameAndRevision(t *testing.T) {
 	}
 }
 
-func TestParseOFTElementIDRefusesMalformedIDs(t *testing.T) {
+func TestParseOFTSpecificationItemIDRefusesMalformedIDs(t *testing.T) {
 	for _, text := range []string{"", "req~name", "req~name~one", "~name~1", "req~~1", "req~name~-1", "req~a~b~1"} {
-		if _, err := ParseOFTElementID(text); err == nil {
+		if _, err := ParseOFTSpecificationItemID(text); err == nil {
 			t.Errorf("expected %q to be refused", text)
 		}
 	}
 }
 
-func TestNewOFTValidationGroupsElementIDsByType(t *testing.T) {
+func TestNewOFTValidationGroupsSpecificationItemIDsByArtifactType(t *testing.T) {
 	feature, requirement := mustParse(t, "feat~f~1"), mustParse(t, "req~r~1")
 
-	validation := NewOFTValidation(true, []OFTElementID{feature, requirement})
+	validation := NewOFTValidation(true, []OFTSpecificationItemID{feature, requirement})
 
 	if !validation.Valid() || !validation.Contains(feature) || !validation.Contains(requirement) {
 		t.Fatalf("got %+v", validation)
@@ -45,13 +45,13 @@ func TestNewOFTValidationGroupsElementIDsByType(t *testing.T) {
 }
 
 func TestOFTValidationUsesThePublishedResponseFormat(t *testing.T) {
-	validation := NewOFTValidation(false, []OFTElementID{mustParse(t, "req~r~1")})
+	validation := NewOFTValidation(false, []OFTSpecificationItemID{mustParse(t, "req~r~1")})
 
 	encoded, err := json.Marshal(validation)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := `{"valid":false,"oftElementIDs":{"req":["req~r~1"]}}`; string(encoded) != want {
+	if want := `{"valid":false,"oftSpecificationItemIDs":{"req":["req~r~1"]}}`; string(encoded) != want {
 		t.Fatalf("got %s, want %s", encoded, want)
 	}
 	var decoded OFTValidation
@@ -65,7 +65,7 @@ func TestOFTValidationUsesThePublishedResponseFormat(t *testing.T) {
 
 func TestOFTValidationRefusesAnIDUnderAnotherType(t *testing.T) {
 	var validation OFTValidation
-	if err := json.Unmarshal([]byte(`{"valid":true,"oftElementIDs":{"feat":["req~r~1"]}}`), &validation); err == nil {
+	if err := json.Unmarshal([]byte(`{"valid":true,"oftSpecificationItemIDs":{"feat":["req~r~1"]}}`), &validation); err == nil {
 		t.Fatal("expected an ID listed under another type to be refused")
 	}
 }

@@ -10,7 +10,7 @@ import (
 )
 
 // [utest -> req~oft-requirements-detection~1]
-func TestReadASpecReportReturnsTheOFTElementIDsPerType(t *testing.T) {
+func TestReadASpecReportReturnsTheOFTSpecificationItemIDsPerArtifactType(t *testing.T) {
 	report := []byte(`<specdocument>
   <specobjects doctype="feat"><specobject><id>oft-validation</id><version>1</version></specobject></specobjects>
   <specobjects doctype="req">
@@ -25,7 +25,7 @@ func TestReadASpecReportReturnsTheOFTElementIDsPerType(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, text := range []string{"feat~oft-validation~1", "req~first~1", "req~second~2"} {
-		id, err := domain.ParseOFTElementID(text)
+		id, err := domain.ParseOFTSpecificationItemID(text)
 		if err != nil {
 			t.Fatal(err)
 		}

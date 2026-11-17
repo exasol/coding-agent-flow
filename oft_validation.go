@@ -8,11 +8,11 @@ import (
 
 type TargetProject = domain.TargetProject
 
-// OFTElementType is the type of an OFT Element, such as req or feat.
-type OFTElementType = domain.OFTElementType
+// OFTArtifactType is the type of an OFT Specification Item, such as req or feat.
+type OFTArtifactType = domain.OFTArtifactType
 
-// OFTElementID identifies an OFT Element formatted as type~name~revision.
-type OFTElementID = domain.OFTElementID
+// OFTSpecificationItemID identifies an OFT Specification Item formatted as type~name~revision.
+type OFTSpecificationItemID = domain.OFTSpecificationItemID
 
 type OFTValidation = domain.OFTValidation
 
@@ -22,9 +22,9 @@ func NewTargetProject(path string) TargetProject {
 	return domain.NewTargetProject(path)
 }
 
-// ParseOFTElementID reads an OFTElementID formatted as type~name~revision.
-func ParseOFTElementID(text string) (OFTElementID, error) {
-	return domain.ParseOFTElementID(text)
+// ParseOFTSpecificationItemID reads an OFTSpecificationItemID formatted as type~name~revision.
+func ParseOFTSpecificationItemID(text string) (OFTSpecificationItemID, error) {
+	return domain.ParseOFTSpecificationItemID(text)
 }
 
 // NewOFTTracingValidator creates an OFTTracingValidator that uses OpenFastTrace.
