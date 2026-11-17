@@ -1,33 +1,24 @@
-// Package oftvalidation holds the shared When helper of the OFT validation use cases.
+// Package oftvalidation provides file fixtures for OFT validation acceptance tests.
 package oftvalidation
 
 import (
-	"slices"
-	"strings"
-
-	"github.com/exasol/coding-agent-flow/test/acceptance"
+	"os"
+	"path/filepath"
+	"testing"
 )
 
-// OFTValidationResponse is the documented JSON response of OFT validation.
-type OFTValidationResponse struct {
-	Valid                bool                `json:"valid"`
-	SpecificationItemIDs map[string][]string `json:"oftSpecificationItemIDs"`
-}
-
-// HasSpecificationItemID reports whether the response contains id.
-func (response OFTValidationResponse) HasSpecificationItemID(id string) bool {
-	artifactType, _, found := strings.Cut(id, "~")
-	return found && slices.Contains(response.SpecificationItemIDs[artifactType], id)
-}
-
-// When creates the When binding of an OFT validation use case. The call can use targetProject, made of the
-// run's input files.
-func When(step, call string) acceptance.When[OFTValidationResponse] {
-	return acceptance.When[OFTValidationResponse]{
-		Step:    step,
-		Call:    call,
-		Imports: []string{`codingagentflow "github.com/exasol/coding-agent-flow"`},
-		Inputs:  []acceptance.Input{{Name: "targetProject", Expression: "codingagentflow.NewTargetProject(files.Directory())"}},
-		Decode:  acceptance.DecodeJSON[OFTValidationResponse],
+// TargetProject writes files to a temporary target-project directory.
+func TargetProject(t *testing.T, files map[string]string) string {
+	t.Helper()
+	directory := t.TempDir()
+	for path, content := range files {
+		file := filepath.Join(directory, filepath.FromSlash(path))
+		if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(file, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
 	}
+	return directory
 }

@@ -1,28 +1,49 @@
+//go:build oftvalidation
+
 package ofttracingvalidator
 
 import (
 	"testing"
 
-	"github.com/exasol/coding-agent-flow/test/acceptance"
+	codingagentflow "github.com/exasol/coding-agent-flow"
 	oftvalidation "github.com/exasol/coding-agent-flow/test/acceptance/oft-validation"
 )
 
-var scenarios = acceptance.NewSuite(
-	oftvalidation.When(
-		"the caller validates OFT tracing for the target project path",          // the When step
-		"codingagentflow.NewOFTTracingValidator().Validate(ctx, targetProject)", // the public method it calls
-	),
-	checkValid, // compares the response with the scenario values in `at_data.toml`
-)
-
-func checkValid(response oftvalidation.OFTValidationResponse, _ acceptance.Values, then acceptance.Values) error {
-	return acceptance.Expect("valid", then.Bool("valid"), response.Valid)
+type tracingValidationScenario struct {
+	name  string
+	files map[string]string
+	valid bool
 }
 
-// [at -> scn~oft-requirement-covers-feature~1]
-// [at -> scn~oft-requirement-does-not-cover-feature~1]
+// [at -> scn~oft-tracing-validator~1]
 func TestOFTTracingValidator(t *testing.T) {
 	// Disabled until CAF provides NewTargetProject and NewOFTTracingValidator.
-	t.Skip("OFT validation public API is not implemented")
-	scenarios.Run(t)
+	for _, scenario := range []tracingValidationScenario{
+		{
+			name: "returns valid when a requirement covers a feature",
+			files: map[string]string{
+				"features.md":     "# Valid Fixture Feature\n\nfeat~valid-fixture-feature~1\n\nNeeds: req\n",
+				"requirements.md": "# Valid Fixture Requirement\n\nreq~valid-fixture-requirement~1\n\nCovers:\n\n- feat~valid-fixture-feature~1\n",
+			},
+			valid: true,
+		},
+		{
+			name: "returns invalid when a feature stays uncovered",
+			files: map[string]string{
+				"features.md": "# Invalid Fixture Feature\n\nfeat~invalid-fixture-feature~1\n\nNeeds: req\n",
+			},
+			valid: false,
+		},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			project := codingagentflow.NewTargetProject(oftvalidation.TargetProject(t, scenario.files))
+			response, err := codingagentflow.NewOFTTracingValidator().Validate(t.Context(), project)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := response.Valid(); got != scenario.valid {
+				t.Errorf("valid: got %t, want %t", got, scenario.valid)
+			}
+		})
+	}
 }
