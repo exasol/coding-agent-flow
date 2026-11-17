@@ -4,6 +4,7 @@ go 1.26.8
 
 require (
 	github.com/exasol/error-reporting-go v0.2.1
+	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/stretchr/testify v1.11.1
 )
 
