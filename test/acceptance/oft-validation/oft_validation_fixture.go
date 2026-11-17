@@ -1,24 +1,17 @@
-// Package oftvalidation provides file fixtures for OFT validation acceptance tests.
+//go:build oftvalidation
+
+// OFT acceptance tests are disabled until CAF provides NewTargetProject and NewOFTTracingValidator.
 package oftvalidation
 
 import (
-	"os"
-	"path/filepath"
-	"testing"
+	"context"
+
+	codingagentflow "github.com/exasol/coding-agent-flow"
+	"github.com/exasol/coding-agent-flow/test/acceptance"
 )
 
-// TargetProject writes files to a temporary target-project directory.
-func TargetProject(t *testing.T, files map[string]string) string {
-	t.Helper()
-	directory := t.TempDir()
-	for path, content := range files {
-		file := filepath.Join(directory, filepath.FromSlash(path))
-		if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(file, []byte(content), 0o600); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return directory
+// When invokes the OFT tracing validator directly.
+func When(ctx context.Context, directory string, _ acceptance.Values) (codingagentflow.OFTValidation, error) {
+	targetProject := codingagentflow.NewTargetProject(directory)
+	return codingagentflow.NewOFTTracingValidator().Validate(ctx, targetProject)
 }

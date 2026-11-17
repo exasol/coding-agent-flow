@@ -6,74 +6,102 @@ import (
 	"testing"
 
 	codingagentflow "github.com/exasol/coding-agent-flow"
+	"github.com/exasol/coding-agent-flow/test/acceptance"
 	oftvalidation "github.com/exasol/coding-agent-flow/test/acceptance/oft-validation"
 )
 
-type requirementsDetectionScenario struct {
-	name          string
-	files         map[string]string
-	requirementID string
-	found         bool
+var scenarios = acceptance.NewSuite(
+	oftvalidation.When,
+	[]acceptance.Scenario{
+		{
+			ID:          "scn~oft-requirements-detection~1",
+			Description: "Detect a requirement from doc/requirements/requirements.rst",
+			Given:       acceptance.Values{"req_id": "req~valid-doc-requirements-rst~1"},
+			Files: []acceptance.File{{
+				Path: "doc/requirements/requirements.rst",
+				Content: `
+OFT Requirement document
+========================
+
+req~valid-doc-requirements-rst~1
+`,
+			}},
+			Then: acceptance.Values{"found": "true"},
+		},
+		{
+			ID:          "scn~oft-requirements-detection~1",
+			Description: "Detect a requirement from requirements.rst",
+			Given:       acceptance.Values{"req_id": "req~valid-root-rst~1"},
+			Files: []acceptance.File{{
+				Path: "requirements.rst",
+				Content: `
+OFT Requirement document
+========================
+
+req~valid-root-rst~1
+`,
+			}},
+			Then: acceptance.Values{"found": "true"},
+		},
+		{
+			ID:          "scn~oft-requirements-detection~1",
+			Description: "Detect a requirement from requirements.md",
+			Given:       acceptance.Values{"req_id": "req~valid-root-markdown~1"},
+			Files: []acceptance.File{{
+				Path: "requirements.md",
+				Content: `
+OFT Requirement document
+========================
+
+req~valid-root-markdown~1
+`,
+			}},
+			Then: acceptance.Values{"found": "true"},
+		},
+		{
+			ID:          "scn~oft-requirements-detection~1",
+			Description: "Do not detect a requirement from doc/requirements/requirements.txt",
+			Given:       acceptance.Values{"req_id": "req~invalid-doc-requirements-text~1"},
+			Files: []acceptance.File{{
+				Path: "doc/requirements/requirements.txt",
+				Content: `
+OFT Requirement document
+========================
+
+req~invalid-doc-requirements-text~1
+`,
+			}},
+			Then: acceptance.Values{"found": "false"},
+		},
+		{
+			ID:          "scn~oft-requirements-detection~1",
+			Description: "Do not detect a requirement from requirements.txt",
+			Given:       acceptance.Values{"req_id": "req~invalid-root-text~1"},
+			Files: []acceptance.File{{
+				Path: "requirements.txt",
+				Content: `
+OFT Requirement document
+========================
+
+req~invalid-root-text~1
+`,
+			}},
+			Then: acceptance.Values{"found": "false"},
+		},
+	},
+	checkRequirementFound,
+)
+
+func checkRequirementFound(response codingagentflow.OFTValidation, given acceptance.Values, then acceptance.Values) error {
+	requirementID := given.String("req_id")
+	id, err := codingagentflow.ParseOFTSpecificationItemID(requirementID)
+	if err != nil {
+		return err
+	}
+	return acceptance.Expect(requirementID+" found", then.Bool("found"), response.Contains(id))
 }
 
 // [at -> scn~oft-requirements-detection~1]
 func TestOFTRequirementsDetector(t *testing.T) {
-	// Disabled until CAF provides NewTargetProject and NewOFTTracingValidator.
-	for _, scenario := range []requirementsDetectionScenario{
-		{
-			name: "detects a requirement from doc/requirements/requirements.rst",
-			files: map[string]string{
-				"doc/requirements/requirements.rst": "OFT Requirement document\n========================\n\nreq~valid-doc-requirements-rst~1\n",
-			},
-			requirementID: "req~valid-doc-requirements-rst~1",
-			found:         true,
-		},
-		{
-			name: "detects a requirement from requirements.rst",
-			files: map[string]string{
-				"requirements.rst": "OFT Requirement document\n========================\n\nreq~valid-root-rst~1\n",
-			},
-			requirementID: "req~valid-root-rst~1",
-			found:         true,
-		},
-		{
-			name: "detects a requirement from requirements.md",
-			files: map[string]string{
-				"requirements.md": "OFT Requirement document\n========================\n\nreq~valid-root-markdown~1\n",
-			},
-			requirementID: "req~valid-root-markdown~1",
-			found:         true,
-		},
-		{
-			name: "does not detect a requirement from doc/requirements/requirements.txt",
-			files: map[string]string{
-				"doc/requirements/requirements.txt": "OFT Requirement document\n========================\n\nreq~invalid-doc-requirements-text~1\n",
-			},
-			requirementID: "req~invalid-doc-requirements-text~1",
-			found:         false,
-		},
-		{
-			name: "does not detect a requirement from requirements.txt",
-			files: map[string]string{
-				"requirements.txt": "OFT Requirement document\n========================\n\nreq~invalid-root-text~1\n",
-			},
-			requirementID: "req~invalid-root-text~1",
-			found:         false,
-		},
-	} {
-		t.Run(scenario.name, func(t *testing.T) {
-			project := codingagentflow.NewTargetProject(oftvalidation.TargetProject(t, scenario.files))
-			response, err := codingagentflow.NewOFTTracingValidator().Validate(t.Context(), project)
-			if err != nil {
-				t.Fatal(err)
-			}
-			id, err := codingagentflow.ParseOFTSpecificationItemID(scenario.requirementID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := response.Contains(id); got != scenario.found {
-				t.Errorf("%s found: got %t, want %t", scenario.requirementID, got, scenario.found)
-			}
-		})
-	}
+	scenarios.Run(t)
 }
