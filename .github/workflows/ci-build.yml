@@ -20,13 +20,32 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: "1.26.8"
+          go-version: "1.27.4"
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Fetch OpenFastTrace
+        run: >-
+          mvn --batch-mode org.apache.maven.plugins:maven-dependency-plugin:3.11.0:get
+          -Dartifact=org.itsallcode.openfasttrace:openfasttrace:4.11.0 -Dtransitive=false
 
       - name: Build
         run: go build ./...
 
-      - name: Test
-        run: go test ./...
+      - name: Unit tests
+        run: go test . ./internal/...
+
+      - name: OFT trace
+        run: >-
+          java -jar ~/.m2/repository/org/itsallcode/openfasttrace/openfasttrace/4.11.0/openfasttrace-4.11.0.jar
+          trace doc internal test oft_validation.go
+
+      - name: Acceptance tests
+        run: go test ./test/acceptance/...
 
   # This job ensures inputs have been executed successfully.
   allow-merge:
