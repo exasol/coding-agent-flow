@@ -11,18 +11,14 @@ import (
 
 type File struct{ Path, Content string }
 
-func Run[Parameter, Input, Response any](t *testing.T, parameters []Parameter, given func(*testing.T, Parameter) Input, when func(context.Context, Input) (Response, error), then func(Parameter, Response) error) {
+func Run[Input, Response any](t *testing.T, files []File, given func(*testing.T, []File) Input, when func(context.Context, Input) (Response, error), then func(Response) error) {
 	t.Helper()
-	for index, parameter := range parameters {
-		t.Run(fmt.Sprintf("scenario-%d", index+1), func(t *testing.T) {
-			response, err := when(t.Context(), given(t, parameter))
-			if err != nil {
-				t.Fatalf("When: %v", err)
-			}
-			if err := then(parameter, response); err != nil {
-				t.Errorf("Then: %v", err)
-			}
-		})
+	response, err := when(t.Context(), given(t, files))
+	if err != nil {
+		t.Fatalf("When: %v", err)
+	}
+	if err := then(response); err != nil {
+		t.Errorf("Then: %v", err)
 	}
 }
 
