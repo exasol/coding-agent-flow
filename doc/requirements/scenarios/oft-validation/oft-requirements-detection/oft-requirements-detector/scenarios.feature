@@ -1,7 +1,7 @@
 Feature: OFT Requirements Detector
   Identify OFT requirements files in a Target Project.
 
-  @id:scn~oft-requirements-detection~1
+  @id:scn~oft-requirements-detector~1
   # Covers: req~oft-requirements-detection~1
   # Needs: at
   Scenario Outline: Detect OFT Requirements by file location and extension

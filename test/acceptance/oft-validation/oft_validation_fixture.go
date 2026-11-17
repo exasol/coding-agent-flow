@@ -4,14 +4,33 @@
 package oftvalidation
 
 import (
-	"context"
+	"fmt"
+	"testing"
 
 	codingagentflow "github.com/exasol/coding-agent-flow"
 	"github.com/exasol/coding-agent-flow/test/acceptance"
 )
 
-// When invokes the OFT tracing validator directly.
-func When(ctx context.Context, directory string, _ acceptance.Values) (codingagentflow.OFTValidation, error) {
-	targetProject := codingagentflow.NewTargetProject(directory)
-	return codingagentflow.NewOFTTracingValidator().Validate(ctx, targetProject)
+type File struct {
+	Path, Template string
+	Parameters     []string
+}
+
+func Files(files ...File) []acceptance.File {
+	result := make([]acceptance.File, len(files))
+	for index, file := range files {
+		result[index] = acceptance.File{Path: file.Path, Content: fmt.Sprintf(file.Template, file.Parameters)}
+	}
+	return result
+}
+
+func TargetProject(t *testing.T, files []acceptance.File) codingagentflow.TargetProject {
+	return codingagentflow.NewTargetProject(acceptance.WriteFiles(t, files))
+}
+
+// Validate runs OFTTracingValidator.Validate for one file fixture.
+func Validate(t *testing.T, files []acceptance.File, then func(codingagentflow.OFTValidation) error) {
+	t.Helper()
+	validator := codingagentflow.NewOFTTracingValidator()
+	acceptance.Run(t, files, TargetProject, validator.Validate, then)
 }
