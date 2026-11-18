@@ -59,3 +59,13 @@ func TestOFTTracingValidator_invalid(t *testing.T) {
 		expectValid(false),
 	)
 }
+
+// [at -> scn~oft-tracing-validator_requirement-covers-other-feature~1]
+func TestOFTTracingValidator_requirementCoversOtherFeature(t *testing.T) {
+	oftvalidation.Validate(t, oftvalidation.Files(
+		featureFile("feat~needed-fixture-feature~1"),
+		requirementFile("req~other-feature-fixture-requirement~1", "feat~other-fixture-feature~1"),
+	),
+		expectValid(false),
+	)
+}
