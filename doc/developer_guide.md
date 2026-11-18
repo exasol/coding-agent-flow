@@ -10,6 +10,64 @@ document when it uses one of these extensions:
 
 The check does not search subdirectories or validate document content.
 
+## Code Validation Code Structure
+
+The Link Checker lives in `internal/codevalidation/`:
+
+| Package | Content | Example |
+|---|---|---|
+| `domain` | Domain classes and their rules | `LinkValidation`, `BrokenLink`, `LinkScope` |
+| `application/port` | Interfaces the use cases call | `BrokenLinkFinder` |
+| `application/service` | One service per use case | `LinkChecker` |
+| `adapter/lychee` | Implementation of `BrokenLinkFinder` with lychee | `Adapter` |
+
+The root package `codingagentflow` is the public API. Its constructor passes the adapter and the Link Scope to the use case:
+
+```go
+func NewLinkChecker(options ...LinkCheckerOption) LinkChecker {
+	settings := linkCheckerSettings{scope: domain.LocalLinks}
+	for _, option := range options {
+		option(&settings)
+	}
+	return service.NewLinkChecker(lychee.NewAdapter(), settings.scope)
+}
+```
+
+`internal/codevalidation/architecture_test.go` checks the imports of each layer. `internal/global/target_project.go` holds the `TargetProject` that all domains share.
+
+### lychee Command
+
+The adapter runs lychee in the Target Project:
+
+```shell
+lychee --config <CAF configuration> --format json --no-progress --include-fragments --extensions md,rst,txt,xml --root-dir <target project> <scope arguments> .
+```
+
+| Link Scope | Scope arguments |
+|---|---|
+| Local Links: `NewLinkChecker()` | `--offline` |
+| Local and External Links: `NewLinkChecker(WithExternalLinks())` | `--accept 200..=299,429 --timeout 10 --max-retries 2` |
+
+The CAF configuration is a temporary file outside the Target Project. It replaces the `lychee.toml` that lychee reads from its working directory by default.
+
+lychee uses `GITHUB_TOKEN` from the environment for GitHub URLs, which raises the GitHub rate limit.
+
+The adapter reads the Broken Links from the JSON report for exit code `0` (all Links resolve) and `2` (Broken Links). It reports other exit codes as errors.
+
+### lychee Setup
+
+CAF uses the lychee binary from `LYCHEE_BINARY`. If the variable is unset, CAF uses lychee 0.24.2 from the user cache directory, for example `~/.cache/coding-agent-flow/lychee/0.24.2/lychee` on Linux. On first use, CAF downloads it for Linux or macOS and verifies its SHA-256 checksum.
+
+Before each check, CAF requires `lychee --version` to report `lychee 0.24.2`, the version whose JSON report the adapter reads. Otherwise, it fails with `E-CAF-4`.
+
+Run the acceptance tests of the Link Checker:
+
+```shell
+go test ./test/acceptance/code-validation/...
+```
+
+The acceptance tests check URLs against a local web server on `127.0.0.1` and run offline once lychee is in the cache.
+
 ## Continuous Integration
 
 The GitHub Actions workflow in `.github/workflows/ci-build.yml` runs on every
