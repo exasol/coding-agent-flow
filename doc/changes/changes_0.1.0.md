@@ -11,4 +11,5 @@ Initial release of coding-agent-flow.
 * #1: Initial implementation of CI workflow and release documentation.
 * #3: Added detection of requirements documents in projects.
 * #13: Added detection of reStructuredText (`.rst`) requirements documents.
+* #37: Documentation: OFT Tracing Validator
 * #43: Code Implementation: OFT Tracing Validator
