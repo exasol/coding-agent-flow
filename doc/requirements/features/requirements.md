@@ -34,6 +34,6 @@ Covers:
 
 - `feat~code-validation~1`
 
-Needs: scn, impl, utest
+Needs: dsn, scn, impl, utest
 
 Rationale: CAF reports broken document links before an agent hands over its work.
