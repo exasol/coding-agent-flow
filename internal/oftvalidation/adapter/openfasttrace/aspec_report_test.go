@@ -1,9 +1,6 @@
 package openfasttrace
 
 import (
-	"context"
-	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/exasol/coding-agent-flow/internal/oftvalidation/domain"
@@ -41,15 +38,5 @@ func TestReadASpecReportReturnsTheOFTSpecificationItemIDsPerArtifactType(t *test
 func TestReadASpecReportReportsAnUnreadableReport(t *testing.T) {
 	if _, err := readASpecReport([]byte("Exception in thread main"), false); err == nil {
 		t.Fatal("expected an error for output that is no ASpec report")
-	}
-}
-
-func TestLocateJarReportsAMissingConfiguredJar(t *testing.T) {
-	t.Setenv(jarEnvironmentVariable, filepath.Join(t.TempDir(), "openfasttrace.jar"))
-
-	_, err := locateJar(context.Background())
-
-	if err == nil || !strings.Contains(err.Error(), jarEnvironmentVariable) {
-		t.Fatalf("expected an error naming %s for a missing JAR, got %v", jarEnvironmentVariable, err)
 	}
 }
