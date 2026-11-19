@@ -66,7 +66,7 @@ func NewOFTTracingValidator() OFTTracingValidator {
 
 ## Acceptance Tests
 
-Acceptance tests are Go integration tests. Each test writes a Target Project to a temporary directory, calls a use case through the public API, and checks the response. The Gherkin scenarios in `doc/requirements/scenarios/` describe the use cases, and OFT traces each scenario `@id` to the `[at -> ...]` marker of its test. The skill `reconcile-acceptance-tests` writes the tests from the scenarios.
+Acceptance tests are Go integration tests. Each test writes a Target Project to a temporary directory, calls a use case through the public API, and checks the response. The Gherkin scenarios in `doc/requirements/scenarios/` describe the use cases, and OFT traces each scenario `@id` to the `[at -> ...]` marker of its test.
 
 Run the acceptance tests with `go test ./test/acceptance/...`. CI runs every acceptance test and fails for a `//go:build` constraint in `test/acceptance/`.
 
@@ -76,7 +76,7 @@ Run the acceptance tests with `go test ./test/acceptance/...`. CI runs every acc
 |---|---|
 | `test/acceptance/fixture.go` | Helpers for all domains |
 | `test/acceptance/<domain>/<domain>_fixture.go` | Helpers of one domain, for example `test/acceptance/oft-validation/oft_validation_fixture.go` |
-| `test/acceptance/<domain>/<requirement>/<use-case>/*_test.go` | One file per use case: file templates, checks, and one test function per scenario |
+| `test/acceptance/<domain>/<requirement>/<use-case>/*_test.go` | The test files of one use case: file templates, checks, and one test function per scenario |
 
 | Helper | Purpose |
 |---|---|
@@ -131,7 +131,7 @@ func TestOFTRequirementsDetector(t *testing.T) {
 ### Adding an Acceptance Test
 
 1. Add the scenario with its `@id` to the `scenarios.feature` of the use case in `doc/requirements/scenarios/`.
-2. Add a test function with the marker `// [at -> <scenario id>]` to the test file of the use case.
+2. Add a test function with the marker `// [at -> <scenario id>]` to a test file in the folder of the use case.
 3. Build the Target Project files with the helpers of the domain fixture, call the use case, and check the response with an `expect...` function.
 
 ### Failing Test
