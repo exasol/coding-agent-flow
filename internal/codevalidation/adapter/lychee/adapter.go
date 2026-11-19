@@ -123,10 +123,15 @@ func arguments(root, configuration string, scope domain.LinkScope) []string {
 	return append(result, ".")
 }
 
+// runError reports a failed lychee run with the error and, if present, the shortened standard error output.
 func runError(err error, stderr string) error {
+	message := "Failed to check links with lychee: {{error|uq}}."
+	if stderr = strings.TrimSpace(stderr); stderr != "" {
+		message += " {{stderr|uq}}"
+	}
 	return exaerror.New("E-CAF-2").
-		Message("Failed to check links with lychee: {{error|uq}}. {{stderr|uq}}").
+		Message(message).
 		Parameter("error", err).
-		Parameter("stderr", strings.TrimSpace(stderr)).
+		Parameter("stderr", truncate([]byte(stderr))).
 		Mitigation("Ensure that the Target Project Path is a readable directory and that lychee runs on this machine.")
 }

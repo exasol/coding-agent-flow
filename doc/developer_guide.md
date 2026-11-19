@@ -12,7 +12,7 @@ The check does not search subdirectories or validate document content.
 
 ## Link Checker Setup
 
-The Link Checker runs the lychee binary from `LYCHEE_BINARY`. Without it, CAF downloads the supported lychee version into the user cache directory on first use, for example `~/.cache/coding-agent-flow/lychee/`.
+The Link Checker runs the lychee binary from `LYCHEE_BINARY`. Without it, CAF downloads the supported lychee version into the user cache directory on first use, for example `~/.cache/coding-agent-flow/lychee/`. CAF downloads lychee for Linux and macOS on amd64 and arm64; on other platforms, set `LYCHEE_BINARY`.
 
 Run the acceptance tests of the Link Checker:
 

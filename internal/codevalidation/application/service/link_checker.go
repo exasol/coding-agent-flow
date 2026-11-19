@@ -21,5 +21,6 @@ func NewLinkChecker(finder port.BrokenLinkFinder, scope domain.LinkScope) LinkCh
 
 func (checker LinkChecker) Check(ctx context.Context, targetProject global.TargetProject) (domain.LinkValidation, error) {
 	// [impl -> req~link-validation~1]
+	// TODO(#54): decide link validity in the domain from the lychee report.
 	return checker.finder.FindBrokenLinks(ctx, targetProject, checker.scope)
 }

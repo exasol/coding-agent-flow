@@ -13,8 +13,6 @@ import (
 
 // jsonReport is the part of the lychee JSON report that lists the failed links per input file.
 type jsonReport struct {
-	Errors     int                       `json:"errors"`
-	Timeouts   int                       `json:"timeouts"`
 	ErrorMap   map[string][]jsonResponse `json:"error_map"`
 	TimeoutMap map[string][]jsonResponse `json:"timeout_map"`
 }

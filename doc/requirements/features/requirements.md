@@ -28,7 +28,7 @@ Rationale: CAF reports traceability results before implementation begins.
 
 `req~link-validation~1`
 
-CAF checks the Links in the `.md`, `.rst`, `.txt`, and `.xml` documents of a Target Project with lychee and returns a `LinkValidation` response. `valid` reports the result. `brokenLinks` lists each Broken Link with source file, line, target, and status. CAF uses its own lychee configuration and leaves the Target Project unchanged.
+CAF checks the Links in the `.md`, `.rst`, `.txt`, and `.xml` documents of a Target Project and returns a `LinkValidation` response. `valid` reports the result. `brokenLinks` lists each Broken Link with source file, line, target, and status. CAF leaves the Target Project unchanged and ignores link-checker configuration files in it.
 
 Covers:
 

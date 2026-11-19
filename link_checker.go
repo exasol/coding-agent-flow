@@ -9,6 +9,9 @@ import (
 // LinkValidation is the result of the Link Checker. It lists the Broken Links of a Target Project.
 type LinkValidation = domain.LinkValidation
 
+// Link is a reference in a Target Project document to a file, an Anchor, or a URL.
+type Link = domain.Link
+
 // BrokenLink is a Link that failed the check, with the status that tells why.
 type BrokenLink = domain.BrokenLink
 

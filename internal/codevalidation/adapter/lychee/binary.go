@@ -47,6 +47,12 @@ var versionPattern = regexp.MustCompile(`^lychee (\d+\.\d+\.\d+)$`)
 // versionTimeout limits the time lychee --version may take.
 const versionTimeout = 10 * time.Second
 
+// downloadTimeout limits the time the download of the release archive may take.
+const downloadTimeout = 2 * time.Minute
+
+// maximumArchiveSize limits the size of the release archive. The archives have about 8 MB.
+const maximumArchiveSize = 64 << 20
+
 // maximumDiagnosticLength limits the program output that an error message quotes.
 const maximumDiagnosticLength = 200
 
@@ -131,7 +137,7 @@ func download(ctx context.Context, archiveURL, checksum, binary string) error {
 	if err != nil {
 		return err
 	}
-	response, err := http.DefaultClient.Do(request)
+	response, err := (&http.Client{Timeout: downloadTimeout}).Do(request)
 	if err != nil {
 		return fmt.Errorf("download lychee %s: %w", lycheeVersion, err)
 	}
@@ -139,9 +145,12 @@ func download(ctx context.Context, archiveURL, checksum, binary string) error {
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("download lychee %s: %s", lycheeVersion, response.Status)
 	}
-	archive, err := io.ReadAll(response.Body)
+	archive, err := io.ReadAll(io.LimitReader(response.Body, maximumArchiveSize+1))
 	if err != nil {
 		return fmt.Errorf("download lychee %s: %w", lycheeVersion, err)
+	}
+	if len(archive) > maximumArchiveSize {
+		return fmt.Errorf("download lychee %s: archive exceeds %d bytes", lycheeVersion, maximumArchiveSize)
 	}
 	return installBinary(archive, checksum, binary)
 }
