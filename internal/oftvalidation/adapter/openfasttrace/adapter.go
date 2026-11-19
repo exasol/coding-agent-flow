@@ -2,7 +2,6 @@
 package openfasttrace
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -13,6 +12,12 @@ import (
 	"github.com/exasol/coding-agent-flow/internal/oftvalidation/domain"
 )
 
+// OpenFastTrace exit codes, see "oft help".
+const (
+	exitTracingDefects  = 1
+	exitCommandLineFail = 2
+)
+
 type Adapter struct{}
 
 var _ port.OFTTracer = Adapter{}
@@ -21,27 +26,46 @@ func NewAdapter() Adapter {
 	return Adapter{}
 }
 
-// Trace treats a successful OpenFastTrace exit as valid tracing.
+// Trace runs OpenFastTrace on the Target Project and reads its ASpec report. Exit code 0 is valid tracing, exit code 1 is tracing with defects, and a cancellation or any other result is an error. It keeps the ASpec report and the diagnostics within the limits of runBounded.
 func (Adapter) Trace(ctx context.Context, targetProject domain.TargetProject) (domain.OFTValidation, error) {
 	// [impl -> req~oft-requirements-detection~1]
 	jar, err := locateJar(ctx)
 	if err != nil {
 		return domain.OFTValidation{}, err
 	}
-	command := exec.CommandContext(ctx, "java", "-jar", jar, "trace", "--output-format", "aspec", targetProject.Path())
-	var stderr bytes.Buffer
-	command.Stderr = &stderr
-	output, err := command.Output()
-	var exitError *exec.ExitError
-	if err != nil && !errors.As(err, &exitError) {
-		return domain.OFTValidation{}, withDiagnostics(fmt.Errorf("run OpenFastTrace: %w", err), stderr.String())
+	output, stderr, err := runBounded(ctx, maximumReportSize, "java", "-jar", jar, "trace", "--output-format", "aspec", targetProject.Path())
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return domain.OFTValidation{}, ctxErr
 	}
-	traceSucceeded := exitError == nil
+	traceSucceeded, err := traceResult(err)
+	if err != nil {
+		return domain.OFTValidation{}, withDiagnostics(err, stderr)
+	}
 	validation, err := readASpecReport(output, traceSucceeded)
 	if err != nil {
-		return domain.OFTValidation{}, withDiagnostics(err, stderr.String())
+		return domain.OFTValidation{}, withDiagnostics(err, stderr)
 	}
 	return validation, nil
+}
+
+// traceResult maps the result of the OpenFastTrace run: exit code 0 is valid tracing, exit code 1 is tracing with
+// defects, and every other result is a tool failure. Exit code 1 also needs a readable ASpec report.
+func traceResult(runError error) (bool, error) {
+	if runError == nil {
+		return true, nil
+	}
+	var exitError *exec.ExitError
+	if !errors.As(runError, &exitError) {
+		return false, fmt.Errorf("run OpenFastTrace: %w", runError)
+	}
+	switch exitError.ExitCode() {
+	case exitTracingDefects:
+		return false, nil
+	case exitCommandLineFail:
+		return false, fmt.Errorf("run OpenFastTrace: command-line error (exit code %d)", exitCommandLineFail)
+	default:
+		return false, fmt.Errorf("run OpenFastTrace: unexpected exit code %d", exitError.ExitCode())
+	}
 }
 
 func withDiagnostics(err error, stderr string) error {

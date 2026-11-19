@@ -7,8 +7,10 @@ import (
 	"github.com/exasol/coding-agent-flow/internal/oftvalidation/domain"
 )
 
-// aspecReport is the XML report of the OpenFastTrace output format aspec.
+// aspecReport is the XML report of the OpenFastTrace output format aspec. The XMLName field requires the root element
+// specdocument, so other XML fails to read.
 type aspecReport struct {
+	XMLName     xml.Name `xml:"specdocument"`
 	Collections []struct {
 		Type  domain.OFTArtifactType `xml:"doctype,attr"`
 		Items []struct {

@@ -16,12 +16,24 @@ On Linux, let Go switch to the project's Go version:
 go env -w GOTOOLCHAIN=auto
 ```
 
-The tests need Java. OFT validation runs the OpenFastTrace JAR from `OPENFASTTRACE_JAR` if set, else from `~/.m2/repository`. Download it once with:
+### OpenFastTrace JAR
+
+The tests need Java on the `PATH`. OFT validation runs the OpenFastTrace JAR of the supported version, `openFastTraceVersion` in `internal/oftvalidation/adapter/openfasttrace/jar.go` (currently 4.11.0). CAF finds the JAR in this order:
+
+1. `OPENFASTTRACE_JAR`: the path to a JAR. CAF requires `java -jar <JAR> help` to report the supported version. A missing file, another version, or an unrelated JAR fails with an error that names the variable.
+2. The local Maven repository: `~/.m2/repository/org/itsallcode/openfasttrace/openfasttrace/<version>/openfasttrace-<version>.jar`.
+3. Automatic download: when the JAR is missing in the local Maven repository, CAF runs Maven with `-Dmaven.repo.local=~/.m2/repository` to download it there, also when `~/.m2/settings.xml` sets another local repository. This needs Maven on the `PATH` and network access to Maven Central or to the repository mirror in `~/.m2/settings.xml`.
+
+When the download fails, for example offline or with Maven missing, OFT validation fails with `download OpenFastTrace <version>: …` and the beginning of Maven's output. To work offline, download the JAR once while online, or set `OPENFASTTRACE_JAR`.
+
+The automatic download runs this command, which also downloads the JAR ahead of time:
 
 ```shell
-mvn --batch-mode org.apache.maven.plugins:maven-dependency-plugin:3.11.0:get \
+mvn --batch-mode org.apache.maven.plugins:maven-dependency-plugin:3.11.0:get -Dmaven.repo.local=$HOME/.m2/repository \
     -Dartifact=org.itsallcode.openfasttrace:openfasttrace:4.11.0 -Dtransitive=false
 ```
+
+### Running the Tests
 
 Run all tests and the OFT trace:
 

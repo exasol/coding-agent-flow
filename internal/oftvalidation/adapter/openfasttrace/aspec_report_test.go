@@ -1,6 +1,7 @@
 package openfasttrace
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/exasol/coding-agent-flow/internal/oftvalidation/domain"
@@ -38,5 +39,24 @@ func TestReadASpecReportReturnsTheOFTSpecificationItemIDsPerArtifactType(t *test
 func TestReadASpecReportReportsAnUnreadableReport(t *testing.T) {
 	if _, err := readASpecReport([]byte("Exception in thread main"), false); err == nil {
 		t.Fatal("expected an error for output that is no ASpec report")
+	}
+}
+
+func TestReadASpecReportRefusesAnotherRootElement(t *testing.T) {
+	for _, output := range []string{
+		`<html><body>OpenFastTrace</body></html>`,
+		`<specobjects doctype="feat"><specobject><id>f</id><version>1</version></specobject></specobjects>`,
+	} {
+		if _, err := readASpecReport([]byte(output), true); err == nil || !strings.Contains(err.Error(), "specdocument") {
+			t.Errorf("expected an error naming specdocument for %q, got %v", output, err)
+		}
+	}
+}
+
+func TestReadASpecReportReadsAnEmptyASpecDocument(t *testing.T) {
+	validation, err := readASpecReport([]byte(`<?xml version="1.0" encoding="UTF-8"?><specdocument></specdocument>`), true)
+
+	if err != nil || !validation.Valid() {
+		t.Fatalf("expected a valid empty result, got %+v, %v", validation, err)
 	}
 }
