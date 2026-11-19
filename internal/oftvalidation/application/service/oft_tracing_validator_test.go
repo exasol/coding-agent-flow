@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/exasol/coding-agent-flow/internal/global"
 	"reflect"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 )
 
 func TestOFTTracingValidatorReturnsTheTraceOfTheTargetProject(t *testing.T) {
-	targetProject := domain.NewTargetProject("target-project")
+	targetProject := global.NewTargetProject("target-project")
 	expected := domain.NewOFTValidation(true, nil)
 	tracer := oftTracerStub{validation: expected}
 
@@ -27,11 +28,11 @@ func TestOFTTracingValidatorReturnsTheTraceOfTheTargetProject(t *testing.T) {
 }
 
 type oftTracerStub struct {
-	traced     domain.TargetProject
+	traced     global.TargetProject
 	validation domain.OFTValidation
 }
 
-func (stub *oftTracerStub) Trace(_ context.Context, targetProject domain.TargetProject) (domain.OFTValidation, error) {
+func (stub *oftTracerStub) Trace(_ context.Context, targetProject global.TargetProject) (domain.OFTValidation, error) {
 	stub.traced = targetProject
 	return stub.validation, nil
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/exasol/coding-agent-flow/internal/global"
 	"os/exec"
 	"strings"
 
@@ -27,7 +28,7 @@ func NewAdapter() Adapter {
 }
 
 // Trace runs OpenFastTrace on the Target Project and reads its ASpec report. Exit code 0 is valid tracing, exit code 1 is tracing with defects, and a cancellation or any other result is an error. It keeps the ASpec report and the diagnostics within the limits of runBounded.
-func (Adapter) Trace(ctx context.Context, targetProject domain.TargetProject) (domain.OFTValidation, error) {
+func (Adapter) Trace(ctx context.Context, targetProject global.TargetProject) (domain.OFTValidation, error) {
 	// [impl -> req~oft-requirements-detection~1]
 	jar, err := locateJar(ctx)
 	if err != nil {

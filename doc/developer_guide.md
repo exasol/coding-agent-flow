@@ -61,7 +61,7 @@ Run all tests and the OFT trace:
 
 ```shell
 go test ./...
-java -jar ~/.m2/repository/org/itsallcode/openfasttrace/openfasttrace/4.11.0/openfasttrace-4.11.0.jar trace doc internal test oft_validation.go
+java -jar ~/.m2/repository/org/itsallcode/openfasttrace/openfasttrace/4.11.0/openfasttrace-4.11.0.jar trace doc internal test *.go
 ```
 
 ## Code Structure

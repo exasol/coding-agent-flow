@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/exasol/coding-agent-flow/internal/global"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,7 +39,7 @@ func TestTraceReportsAnUnreadableJar(t *testing.T) {
 	}
 	t.Setenv(jarEnvironmentVariable, jar)
 
-	_, err := NewAdapter().Trace(context.Background(), domain.NewTargetProject(t.TempDir()))
+	_, err := NewAdapter().Trace(context.Background(), global.NewTargetProject(t.TempDir()))
 
 	if err == nil || !strings.Contains(err.Error(), jarEnvironmentVariable) || !strings.Contains(err.Error(), "help: exit status 1: ") {
 		t.Fatalf("expected the failed version check of the JAR with the Java diagnostics, got %v", err)
@@ -72,7 +73,7 @@ func fakeJava(t *testing.T, report string, exitCode int) {
 
 func trace(t *testing.T, ctx context.Context) (domain.OFTValidation, error) {
 	t.Helper()
-	return NewAdapter().Trace(ctx, domain.NewTargetProject(t.TempDir()))
+	return NewAdapter().Trace(ctx, global.NewTargetProject(t.TempDir()))
 }
 
 func TestTraceMapsTheOFTExitCodes(t *testing.T) {

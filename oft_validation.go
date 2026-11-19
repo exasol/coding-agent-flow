@@ -6,8 +6,6 @@ import (
 	"github.com/exasol/coding-agent-flow/internal/oftvalidation/domain"
 )
 
-type TargetProject = domain.TargetProject
-
 // OFTArtifactType is the type of an OFT Specification Item, such as req or feat.
 type OFTArtifactType = domain.OFTArtifactType
 
@@ -17,10 +15,6 @@ type OFTSpecificationItemID = domain.OFTSpecificationItemID
 type OFTValidation = domain.OFTValidation
 
 type OFTTracingValidator = service.OFTTracingValidator
-
-func NewTargetProject(path string) TargetProject {
-	return domain.NewTargetProject(path)
-}
 
 // ParseOFTSpecificationItemID reads an OFTSpecificationItemID formatted as type~name~revision.
 func ParseOFTSpecificationItemID(text string) (OFTSpecificationItemID, error) {

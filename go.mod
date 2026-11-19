@@ -2,8 +2,11 @@ module github.com/exasol/coding-agent-flow
 
 go 1.27.4
 
-// Test-only dependencies: internal/architecture_test.go uses archunit. The CAF code itself has no third-party dependency.
-require github.com/kcmvp/archunit v0.2.0-alpha1
+require (
+	github.com/exasol/error-reporting-go v0.2.1
+	// Test-only dependency: internal/architecture_test.go uses archunit.
+	github.com/kcmvp/archunit v0.2.0-alpha1
+)
 
 // Test-only dependencies of archunit.
 require (

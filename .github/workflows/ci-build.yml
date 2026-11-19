@@ -42,7 +42,7 @@ jobs:
       - name: OFT trace
         run: >-
           java -jar ~/.m2/repository/org/itsallcode/openfasttrace/openfasttrace/4.11.0/openfasttrace-4.11.0.jar
-          trace doc internal test oft_validation.go
+          trace doc internal test *.go
 
       - name: Check that every acceptance test runs
         run: >-
