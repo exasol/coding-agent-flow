@@ -1,6 +1,4 @@
-//go:build oftvalidation
-
-// OFT acceptance tests are disabled until CAF provides NewTargetProject and NewOFTTracingValidator.
+// Package oftvalidation holds the shared fixture of the OFT Validation use cases.
 package oftvalidation
 
 import (

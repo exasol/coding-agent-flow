@@ -1,5 +1,3 @@
-//go:build oftvalidation
-
 package ofttracingvalidator
 
 import (

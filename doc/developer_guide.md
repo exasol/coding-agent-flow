@@ -23,25 +23,27 @@ mvn --batch-mode org.apache.maven.plugins:maven-dependency-plugin:3.11.0:get \
     -Dartifact=org.itsallcode.openfasttrace:openfasttrace:4.11.0 -Dtransitive=false
 ```
 
-Run the tests and the OFT trace:
+Run all tests and the OFT trace:
 
 ```shell
 go test ./...
 java -jar ~/.m2/repository/org/itsallcode/openfasttrace/openfasttrace/4.11.0/openfasttrace-4.11.0.jar trace doc internal test oft_validation.go
 ```
 
-## OFT Validation Code Structure
+## Code Structure
 
-The OFT validation code lives in `internal/oftvalidation/`:
+Each domain has its own folder under `internal/`, for example `internal/oftvalidation/` for OFT Validation. A domain has four layers:
 
-| Package | Content | Example |
-|---|---|---|
-| `domain` | Domain classes and their rules | `OFTValidation`, `OFTElementID` |
-| `application/port` | Interfaces the use cases call | `OFTTracer` |
-| `application/service` | One service per use case | `OFTTracingValidator` |
-| `adapter/openfasttrace` | Implementation of `OFTTracer` with OpenFastTrace | `Adapter` |
+| Layer | Folder | Content | Example in `internal/oftvalidation/` |
+|---|---|---|---|
+| Domain | `domain/` | Domain classes and their rules | `OFTValidation`, `OFTSpecificationItemID` |
+| Port | `application/port/` | Interfaces that the use cases call | `OFTTracer` |
+| Service | `application/service/` | One service per use case | `OFTTracingValidator` |
+| Adapter | `adapter/<technology>/` | Implementations of the ports | `adapter/openfasttrace/`: `OFTTracer` with OpenFastTrace |
 
-The root package `codingagentflow` is the public API. Its constructor passes the adapter to the use case:
+Domain classes that all domains share go to `internal/global/`.
+
+The root package `codingagentflow` is the public API, with one file per domain, for example `oft_validation.go`. Each constructor passes the adapters to the service of its use case:
 
 ```go
 func NewOFTTracingValidator() OFTTracingValidator {
@@ -49,165 +51,95 @@ func NewOFTTracingValidator() OFTTracingValidator {
 }
 ```
 
-`internal/architecture_test.go` checks the layers of every domain. A domain is a folder under `internal/` with a `domain/` folder, such as `internal/oftvalidation/`, and it has the layers `domain/`, `application/port/`, `application/service/`, and `adapter/`:
+### Architecture Test
 
-* archunit checks that each layer selects at least one package and that the layers depend inward: the domain refers only to itself, `internal/global/`, and the standard library; the port avoids the service and the adapters; the service avoids the adapters; the adapters avoid the service.
-* `go/parser` checks that the domain, the port, and the service avoid `os` and `net`, because archunit applies its rules to module packages only.
+`internal/architecture_test.go` checks every folder under `internal/` that has a `domain/` folder, so a new domain gets the checks automatically:
 
-The test finds a new domain automatically.
+* archunit checks that each layer has at least one package and that the layers depend inward: the domain refers only to itself, `internal/global/`, and the standard library; the port avoids the service and the adapters; the service avoids the adapters; the adapters avoid the service.
+* `go/parser` checks that the domain, the port, and the service avoid `os` and `net`. archunit applies its rules to module packages only.
+
+### Adding a Domain
+
+1. Create `internal/<domain>/` with the four layers.
+2. Add the public API of the domain to the root package, in `<domain>.go`.
+3. Add the acceptance-test fixture of the domain in `test/acceptance/<domain>/`.
 
 ## Acceptance Tests
 
-An acceptance test runs a use case against the public API with the data of its `at_data.toml`.
+Acceptance tests are Go integration tests. Each test writes a Target Project to a temporary directory, calls a use case through the public API, and checks the response. The Gherkin scenarios in `doc/requirements/scenarios/` describe the use cases, and OFT traces each scenario `@id` to the `[at -> ...]` marker of its test. The skill `reconcile-acceptance-tests` writes the tests from the scenarios.
 
-The Gherkin scenarios in `doc/requirements/scenarios/` document the use cases. The skill `reconcile-acceptance-tests` writes the acceptance tests from them, and OFT traces each scenario `@id` to its `[at -> ...]` marker.
+Run the acceptance tests with `go test ./test/acceptance/...`. CI runs every acceptance test and fails for a `//go:build` constraint in `test/acceptance/`.
 
-### Running Acceptance Tests
-
-Run all acceptance tests:
-
-```shell
-go test ./test/acceptance/...
-```
-
-### Example
-
-This section's example is the acceptance test of the use case OFT Requirements Detector in `test/acceptance/oft-validation/oft-requirements-detection/oft-requirements-detector/`:
+### Structure
 
 | File | Content |
 |---|---|
-| `at_data.toml` | Input files and expected values per run |
-| `at_test.go` | The public call, checks, and test function with one `[at -> ...]` OFT trace marker per scenario |
+| `test/acceptance/fixture.go` | Helpers for all domains |
+| `test/acceptance/<domain>/<domain>_fixture.go` | Helpers of one domain, for example `test/acceptance/oft-validation/oft_validation_fixture.go` |
+| `test/acceptance/<domain>/<requirement>/<use-case>/*_test.go` | One file per use case: file templates, checks, and one test function per scenario |
 
-#### at_data.toml
+| Helper | Purpose |
+|---|---|
+| `acceptance.Run(t, files, given, when, then)` | Builds the input from the files with `given`, calls the use case with `when`, and checks the response with `then` |
+| `acceptance.Expect(name, expected, actual)` | Returns an error that names the mismatch, for example `valid: got true, want false` |
+| `oftvalidation.File(path, template, parameters...)` | Creates a Target Project file from a template filled with `fmt.Sprintf` |
+| `oftvalidation.Validate(t, files, then)` | Runs the OFT Tracing Validator on a Target Project with the files |
 
-Each `[[scenario]]` block is one run. Its `id` and `description` name the run in the test output, for example `TestOFTRequirementsDetector/scn~oft-requirements-detection~1:_Detect_OFT_Requirements_by_file_location_and_extension:_requirements.md`. Each block has two parts:
+### Example
 
-| Part | Content | Used by |
-|---|---|---|
-| `[scenario.given]` | Input values, and `[[scenario.given.file]]` entries with the files of the target project | The runner |
-| `[scenario.then]` | Expected values | The checks |
-
-```toml
-[variables]
-requirement_document = '''
-...
-{{req_id}}
-'''
-
-[[scenario]]
-id = "scn~oft-requirements-detection~1"
-description = "Detect OFT Requirements by file location and extension: doc/requirements/requirements.rst"
-
-[scenario.given]
-location = "doc/requirements/requirements.rst"
-req_id = "req~valid-doc-requirements-rst~1"
-
-[[scenario.given.file]]
-path = "{{location}}"
-content = "${requirement_document}"
-
-[scenario.then]
-found = true
-
-[[scenario]]
-...
-```
-
-For this block, the runner:
-
-1. replaces `${requirement_document}` with the text from `[variables]`;
-2. replaces `{{location}}` and `{{req_id}}` in the file with the values from `[scenario.given]`;
-3. writes the file `doc/requirements/requirements.rst` containing `req~valid-doc-requirements-rst~1`.
-
-#### at_test.go
+The acceptance test of the use case OFT Requirements Detector is `test/acceptance/oft-validation/oft-requirements-detection/oft-requirements-detector/oft_requirements_detector_test.go`:
 
 ```go
-var scenarios = acceptance.NewSuite(
-	oftvalidation.When(
-		"the caller validates OFT tracing for the target project path",          // the When step
-		"codingagentflow.NewOFTTracingValidator().Validate(ctx, targetProject)", // the public method it calls
-	),
-	checkRequirementFound, // compares the response with the scenario values in `at_data.toml`
-)
-```
+package oftrequirementsdetector
 
-`targetProject` is the target project with the block's `[[scenario.given.file]]` entries.
+const requirementTemplate = `
+OFT Requirement document
+========================
 
-A check is a Go function that receives the response and the current block's Given and Then values. It returns an error for a mismatch. For the block above, the check receives:
+%s
+`
 
-```go
-given = acceptance.Values{"location": "doc/requirements/requirements.rst", "req_id": "req~valid-doc-requirements-rst~1"}
-then = acceptance.Values{"found": "true"}
-```
+func requirementFiles(path, requirementID string) []acceptance.File {
+	return []acceptance.File{oftvalidation.File(path, requirementTemplate, requirementID)}
+}
 
-The check reads the requirement ID from Given and the expected result from Then:
-
-```go
-func checkRequirementFound(response codingagentflow.OFTValidation, given acceptance.Values, then acceptance.Values) error {
-	reqID := given.String("req_id") // "req~valid-doc-requirements-rst~1"
-	expectedID, err := codingagentflow.ParseOFTElementID(reqID)
-	if err != nil {
-		return err
+func expectRequirementFound(requirementID string, found bool) func(codingagentflow.OFTValidation) error {
+	return func(response codingagentflow.OFTValidation) error {
+		id, err := codingagentflow.ParseOFTSpecificationItemID(requirementID)
+		if err != nil {
+			return err
+		}
+		return acceptance.Expect(requirementID+" found", found, response.Contains(id))
 	}
-	// then.Bool("found") is true: the response must contain expectedID
-	return acceptance.Expect(reqID+" found", then.Bool("found"), response.Contains(expectedID))
 }
-```
 
-`acceptance.Expect` names the mismatch, for example `req~valid-root-rst~1 found: expected false, got true`.
-
-The OFT Tracing Validator uses a check with one value, from `valid = true` or `valid = false`:
-
-```go
-func checkValid(response codingagentflow.OFTValidation, _ acceptance.Values, then acceptance.Values) error {
-	return acceptance.Expect("valid", then.Bool("valid"), response.Valid())
-}
-```
-
-The shared `When` helper lives in `test/acceptance/oft-validation/oft_validation_fixture.go`.
-
-The same `at_test.go` file ends with the test function:
-
-```go
-// [at -> scn~oft-requirements-detection~1]
+// [at -> scn~oft-requirements-detector~1]
 func TestOFTRequirementsDetector(t *testing.T) {
-	scenarios.Run(t)
+	oftvalidation.Validate(t,
+		requirementFiles("doc/requirements/requirements.rst", "req~valid-doc-requirements-rst~1"),
+		expectRequirementFound("req~valid-doc-requirements-rst~1", true),
+	)
+
+	oftvalidation.Validate(t,
+		requirementFiles("requirements.txt", "req~invalid-root-text~1"),
+		expectRequirementFound("req~invalid-root-text~1", false),
+	)
+	// one Validate call per row of the Examples table
 }
 ```
 
-#### Using Given values in the public call
+### Adding an Acceptance Test
 
-Use `given.String("name")` for a value from the current block's `[scenario.given]` table. With the shared helper:
+1. Add the scenario with its `@id` to the `scenarios.feature` of the use case in `doc/requirements/scenarios/`.
+2. Add a test function with the marker `// [at -> <scenario id>]` to the test file of the use case.
+3. Build the Target Project files with the helpers of the domain fixture, call the use case, and check the response with an `expect...` function.
 
-```go
-var scenarios = acceptance.NewSuite(
-	oftvalidation.When(
-		"the caller validates the requested requirement",
-		`api.Validate(ctx, targetProject, given.String("requirement_id"))`,
-	),
-	checkResponse,
-)
-```
+### Failing Test
 
-### What scenarios.Run Does
-
-1. Builds one small program that calls the public API. `at_test.go` stores the call as text, so the acceptance-test package compiles without compiling that call. The runner builds the program during the test. A fixture compile error fails the test.
-2. Runs that program once per block, with the blocks in parallel: writes the Given files, makes the call, and checks the result against the Then values.
-
-### Red Result
-
-A fixture compile error is reported as a test error:
+A use-case error stops the test with `When:`. A check mismatch reports `Then:`, for example:
 
 ```
-public call codingagentflow.DoesNotExist(ctx, targetProject) does not compile:
-undefined: codingagentflow.DoesNotExist
-```
-
-A behavior difference produces a check error:
-
-```
-Then: item found: expected true, got false
+Then: req~valid-root-rst~1 found: got false, want true
 ```
 
 ## Managing Release Notes

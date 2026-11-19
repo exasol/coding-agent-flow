@@ -44,8 +44,13 @@ jobs:
           java -jar ~/.m2/repository/org/itsallcode/openfasttrace/openfasttrace/4.11.0/openfasttrace-4.11.0.jar
           trace doc internal test oft_validation.go
 
+      - name: Check that every acceptance test runs
+        run: >-
+          ! grep -rln '^//go:build' test/acceptance
+          || { echo "Remove the build tags above, so that CI runs every acceptance test."; exit 1; }
+
       - name: Acceptance tests
-        run: go test ./test/acceptance/...
+        run: go test -count=1 ./test/acceptance/...
 
   # This job ensures inputs have been executed successfully.
   allow-merge:
