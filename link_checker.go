@@ -25,6 +25,7 @@ type linkCheckerSettings struct {
 
 // WithExternalLinks makes the LinkChecker also check External Links. This needs network access.
 func WithExternalLinks() LinkCheckerOption {
+	// [impl -> req~external-link-validation~1]
 	return func(settings *linkCheckerSettings) {
 		settings.scope = domain.LocalAndExternalLinks
 	}

@@ -107,6 +107,7 @@ func TestArgumentsRequestAJSONReportWithFragmentsForTheSupportedExtensions(t *te
 	}
 }
 
+// [utest -> req~external-link-validation~1]
 func TestArgumentsCheckLocalLinksOffline(t *testing.T) {
 	arguments := strings.Join(arguments("/project", "/tmp/caf-lychee.toml", domain.LocalLinks), " ")
 

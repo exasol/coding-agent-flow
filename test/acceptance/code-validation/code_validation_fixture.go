@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 
@@ -42,6 +43,41 @@ func NewWebServer(t *testing.T) *WebServer {
 	t.Cleanup(server.Close)
 	webServer.URL = server.URL
 	return webServer
+}
+
+// Document templates with one Link each.
+const (
+	markdownTemplate         = "\n# Document\n\n## Setup\n\n[link](%s)\n"
+	restructuredTextTemplate = "\nDocument\n========\n\nSee %s for details.\n"
+	textTemplate             = "See %s for details.\n"
+	sitemapTemplate          = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n  <url><loc>%s</loc></url>\n</urlset>\n"
+)
+
+// NoBrokenLink marks a valid expected result.
+const NoBrokenLink = ""
+
+// Document creates the file at path with the Link, using the template that matches its extension.
+func Document(path, link string) acceptance.File {
+	templates := map[string]string{
+		".md":  markdownTemplate,
+		".rst": restructuredTextTemplate,
+		".txt": textTemplate,
+		".xml": sitemapTemplate,
+	}
+	return acceptance.NewFile(path, templates[filepath.Ext(path)], link)
+}
+
+// ExpectResult checks valid and, if brokenLink is set, that the Broken Link is reported in source.
+func ExpectResult(valid bool, source, brokenLink string) func(codingagentflow.LinkValidation) error {
+	return func(response codingagentflow.LinkValidation) error {
+		if err := acceptance.Expect("valid", valid, response.Valid()); err != nil {
+			return fmt.Errorf("%w: Broken Links %+v", err, response.BrokenLinks())
+		}
+		if brokenLink != NoBrokenLink && !response.ContainsBrokenLink(source, brokenLink) {
+			return fmt.Errorf("Broken Link %s in %s: not reported in %+v", brokenLink, source, response.BrokenLinks())
+		}
+		return nil
+	}
 }
 
 // Check runs the LinkChecker for a target-project fixture with one or more files.

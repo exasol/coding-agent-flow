@@ -106,6 +106,7 @@ const (
 )
 
 func arguments(root, configuration string, scope domain.LinkScope) []string {
+	// [impl -> req~external-link-validation~1]
 	result := []string{
 		"--config", configuration,
 		"--format", "json",

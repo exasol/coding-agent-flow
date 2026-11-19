@@ -12,6 +12,6 @@ Needs: req
 
 `feat~code-validation~1`
 
-CAF validates the content of Target Project documents and returns a validation result.
+CAF validates the code and documents of a Target Project and returns a validation result.
 
 Needs: req

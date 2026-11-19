@@ -25,6 +25,7 @@ func (finder fakeFinder) FindBrokenLinks(_ context.Context, project global.Targe
 }
 
 // [utest -> req~link-validation~1]
+// [utest -> req~external-link-validation~1]
 func TestCheckReturnsTheBrokenLinksOfTheTargetProjectInTheScope(t *testing.T) {
 	for _, scope := range []domain.LinkScope{domain.LocalLinks, domain.LocalAndExternalLinks} {
 		var receivedProject global.TargetProject
