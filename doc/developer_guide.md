@@ -1,5 +1,27 @@
 # Developer Guide
 
+## Requirements Document Detection
+
+CAF recognizes a direct regular file in `doc/requirements/` as a requirements
+document when it uses one of these extensions:
+
+- `.md` for Markdown;
+- `.rst` for reStructuredText.
+
+The check does not search subdirectories or validate document content.
+
+## Link Checker Setup
+
+The Link Checker runs the lychee binary from `LYCHEE_BINARY`. Without it, CAF downloads the supported lychee version into the user cache directory on first use, for example `~/.cache/coding-agent-flow/lychee/`. CAF downloads lychee for Linux and macOS on amd64 and arm64; on other platforms, set `LYCHEE_BINARY`.
+
+Run the acceptance tests of the Link Checker:
+
+```shell
+go test ./test/acceptance/code-validation/...
+```
+
+They check URLs against a local web server on `127.0.0.1`.
+
 ## Continuous Integration
 
 The GitHub Actions workflow in `.github/workflows/ci-build.yml` runs on every pull request and on pushes to `main`. It verifies:
