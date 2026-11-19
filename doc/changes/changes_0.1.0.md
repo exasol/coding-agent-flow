@@ -12,3 +12,5 @@ Initial release of coding-agent-flow.
 * #3: Added detection of requirements documents in projects.
 * #13: Added detection of reStructuredText (`.rst`) requirements documents.
 * #12: Added the `caf validate` machine interface with project discovery, CI results, and Codex Stop-hook responses.
+* #37: Documentation: OFT Tracing Validator
+* #41: Acceptance Tests: OFT Tracing Validator
