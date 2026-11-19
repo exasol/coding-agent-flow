@@ -16,7 +16,7 @@ On Linux, let Go switch to the project's Go version:
 go env -w GOTOOLCHAIN=auto
 ```
 
-OFT validation runs the OpenFastTrace JAR from `OPENFASTTRACE_JAR` if set, else from `~/.m2/repository`. Download it once with:
+The tests need Java. OFT validation runs the OpenFastTrace JAR from `OPENFASTTRACE_JAR` if set, else from `~/.m2/repository`. Download it once with:
 
 ```shell
 mvn --batch-mode org.apache.maven.plugins:maven-dependency-plugin:3.11.0:get \
@@ -55,7 +55,7 @@ func NewOFTTracingValidator() OFTTracingValidator {
 
 `internal/architecture_test.go` checks every folder under `internal/` that has a `domain/` folder, so a new domain gets the checks automatically:
 
-* archunit checks that each layer has at least one package and that the layers depend inward: the domain refers only to itself, `internal/global/`, and the standard library; the port avoids the service and the adapters; the service avoids the adapters; the adapters avoid the service.
+* archunit checks that each layer has at least one package and that the layers depend inward: the domain refers only to itself, `internal/global/`, and the standard library; the service avoids the adapters; the adapters avoid the service. Go rejects import cycles, which covers the other directions.
 * `go/parser` checks that the domain, the port, and the service avoid `os` and `net`. archunit applies its rules to module packages only.
 
 ### Adding a Domain
@@ -68,7 +68,7 @@ func NewOFTTracingValidator() OFTTracingValidator {
 
 Acceptance tests are Go integration tests. Each test writes a Target Project to a temporary directory, calls a use case through the public API, and checks the response. The Gherkin scenarios in `doc/requirements/scenarios/` describe the use cases, and OFT traces each scenario `@id` to the `[at -> ...]` marker of its test.
 
-Run the acceptance tests with `go test ./test/acceptance/...`. CI runs every acceptance test and fails for a `//go:build` constraint in `test/acceptance/`.
+Run the acceptance tests with `go test ./test/acceptance/...`. CI runs every acceptance test and fails for a build constraint in `test/acceptance/`.
 
 ### Structure
 

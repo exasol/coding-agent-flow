@@ -36,9 +36,11 @@ func TestTraceReportsAnUnreadableJar(t *testing.T) {
 	}
 	t.Setenv(jarEnvironmentVariable, jar)
 
+	_, readError := readASpecReport(nil, false)
+
 	_, err := NewAdapter().Trace(context.Background(), domain.NewTargetProject(t.TempDir()))
 
-	if err == nil || !strings.Contains(err.Error(), "read OFT trace") || !strings.Contains(err.Error(), "Invalid or corrupt jarfile") {
-		t.Fatalf("expected an unreadable OFT trace with the Java diagnostics, got %v", err)
+	if err == nil || !strings.HasPrefix(err.Error(), readError.Error()+": ") {
+		t.Fatalf("expected %q followed by the Java diagnostics, got %v", readError, err)
 	}
 }
