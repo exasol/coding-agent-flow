@@ -2,7 +2,7 @@
 
 ## Continuous Integration
 
-The GitHub Actions workflow in `.github/workflows/ci-build.yml` runs on every pull request and on pushes to `main`. It uses Go 1.27.4 and verifies:
+The GitHub Actions workflow in `.github/workflows/ci-build.yml` runs on every pull request and on pushes to `main`. It verifies:
 
 * all packages build;
 * unit and acceptance tests pass; and
