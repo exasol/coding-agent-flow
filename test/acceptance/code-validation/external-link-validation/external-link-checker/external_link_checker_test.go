@@ -33,28 +33,32 @@ func TestExternalLinkChecker_offByDefault(t *testing.T) {
 	}
 }
 
-// [at -> scn~external-link-checker_opt-in~1]
-func TestExternalLinkChecker_optIn(t *testing.T) {
+// [at -> scn~external-link-checker_valid-links~1]
+func TestExternalLinkChecker_validLinks(t *testing.T) {
 	webServer := codevalidation.NewWebServer(t)
 	checker := codingagentflow.NewLinkChecker(codingagentflow.WithExternalLinks())
-	for _, row := range []struct {
-		source, path string
-		valid        bool
-		brokenLink   string
-	}{
-		{"README.md", "/ok", true, codevalidation.NoBrokenLink},
-		{"README.md", "/rate-limited", true, codevalidation.NoBrokenLink},
-		{"README.md", "/missing", false, webServer.URL + "/missing"},
-		{"doc/a.rst", "/ok", true, codevalidation.NoBrokenLink},
-		{"doc/a.rst", "/missing", false, webServer.URL + "/missing"},
-		{"notes.txt", "/ok", true, codevalidation.NoBrokenLink},
-		{"notes.txt", "/missing", false, webServer.URL + "/missing"},
-		{"sitemap.xml", "/ok", true, codevalidation.NoBrokenLink},
-		{"sitemap.xml", "/missing", false, webServer.URL + "/missing"},
+	for _, row := range []struct{ source, path string }{
+		{"README.md", "/ok"},
+		{"README.md", "/rate-limited"},
+		{"doc/a.rst", "/ok"},
+		{"notes.txt", "/ok"},
+		{"sitemap.xml", "/ok"},
 	} {
 		codevalidation.Check(t, checker,
 			[]acceptance.File{codevalidation.Document(row.source, webServer.URL+row.path)},
-			codevalidation.ExpectResult(row.valid, row.source, row.brokenLink),
+			codevalidation.ExpectResult(true, row.source, codevalidation.NoBrokenLink),
+		)
+	}
+}
+
+// [at -> scn~external-link-checker_broken-link~1]
+func TestExternalLinkChecker_brokenLink(t *testing.T) {
+	webServer := codevalidation.NewWebServer(t)
+	checker := codingagentflow.NewLinkChecker(codingagentflow.WithExternalLinks())
+	for _, source := range []string{"README.md", "doc/a.rst", "notes.txt", "sitemap.xml"} {
+		codevalidation.Check(t, checker,
+			[]acceptance.File{codevalidation.Document(source, webServer.URL+"/missing")},
+			codevalidation.ExpectResult(false, source, webServer.URL+"/missing"),
 		)
 	}
 }
