@@ -84,7 +84,7 @@ func TestLayersSelectPackages(t *testing.T) {
 	}
 }
 
-// TestLayersDependInward checks with archunit that the layers of each domain depend inward: the domain refers only to itself, the Global layer, and the standard library, the service avoids the adapters, and the adapters avoid the service. Go rejects import cycles, which covers the other directions.
+// TestLayersDependInward checks with archunit that the layers of each domain depend inward: the domain refers only to itself, the Global layer, and the standard library, the port avoids the service and the adapters, the service avoids the adapters, and the adapters avoid the service.
 func TestLayersDependInward(t *testing.T) {
 	arch := architecture(t)
 	for _, domain := range domains(t) {
@@ -94,8 +94,9 @@ func TestLayersDependInward(t *testing.T) {
 		}
 		rules := map[string]archunit.Rule{
 			"domain refers only to itself, Global, and the standard library": archunit.Layers(layer(domain, "Domain")).ShouldOnlyRefer(archunit.Layers(allowedByDomain...)),
-			"service avoids adapter": archunit.Layers(layer(domain, "Service")).ShouldNotRefer(archunit.Layers(layer(domain, "Adapter"))),
-			"adapter avoids service": archunit.Layers(layer(domain, "Adapter")).ShouldNotRefer(archunit.Layers(layer(domain, "Service"))),
+			"port avoids service and adapter":                                archunit.Layers(layer(domain, "Port")).ShouldNotRefer(archunit.Layers(layer(domain, "Service"), layer(domain, "Adapter"))),
+			"service avoids adapter":                                         archunit.Layers(layer(domain, "Service")).ShouldNotRefer(archunit.Layers(layer(domain, "Adapter"))),
+			"adapter avoids service":                                         archunit.Layers(layer(domain, "Adapter")).ShouldNotRefer(archunit.Layers(layer(domain, "Service"))),
 		}
 		for name, rule := range rules {
 			if err := arch.Validate(rule); err != nil {
