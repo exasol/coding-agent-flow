@@ -28,12 +28,12 @@ Covers:
 - %s
 `
 
-func featureFile(featureID string) oftvalidation.File {
-	return oftvalidation.File{Path: "features.md", Template: featureTemplate, Parameters: []string{featureID}}
+func featureFile(featureID string) acceptance.File {
+	return oftvalidation.File("features.md", featureTemplate, featureID)
 }
 
-func requirementFile(requirementID, featureID string) oftvalidation.File {
-	return oftvalidation.File{Path: "requirements.md", Template: requirementTemplate, Parameters: []string{requirementID, featureID}}
+func requirementFile(requirementID, featureID string) acceptance.File {
+	return oftvalidation.File("requirements.md", requirementTemplate, requirementID, featureID)
 }
 
 func expectValid(valid bool) func(codingagentflow.OFTValidation) error {
@@ -44,10 +44,11 @@ func expectValid(valid bool) func(codingagentflow.OFTValidation) error {
 
 // [at -> scn~oft-tracing-validator_valid~1]
 func TestOFTTracingValidator_valid(t *testing.T) {
-	oftvalidation.Validate(t, oftvalidation.Files(
-		featureFile("feat~valid-fixture-feature~1"),
-		requirementFile("req~valid-fixture-requirement~1", "feat~valid-fixture-feature~1"),
-	),
+	oftvalidation.Validate(t,
+		[]acceptance.File{
+			featureFile("feat~valid-fixture-feature~1"),
+			requirementFile("req~valid-fixture-requirement~1", "feat~valid-fixture-feature~1"),
+		},
 		expectValid(true),
 	)
 }
@@ -55,17 +56,18 @@ func TestOFTTracingValidator_valid(t *testing.T) {
 // [at -> scn~oft-tracing-validator_invalid~1]
 func TestOFTTracingValidator_invalid(t *testing.T) {
 	oftvalidation.Validate(t,
-		oftvalidation.Files(featureFile("feat~invalid-fixture-feature~1")),
+		[]acceptance.File{featureFile("feat~invalid-fixture-feature~1")},
 		expectValid(false),
 	)
 }
 
 // [at -> scn~oft-tracing-validator_requirement-covers-other-feature~1]
 func TestOFTTracingValidator_requirementCoversOtherFeature(t *testing.T) {
-	oftvalidation.Validate(t, oftvalidation.Files(
-		featureFile("feat~needed-fixture-feature~1"),
-		requirementFile("req~other-feature-fixture-requirement~1", "feat~other-fixture-feature~1"),
-	),
+	oftvalidation.Validate(t,
+		[]acceptance.File{
+			featureFile("feat~needed-fixture-feature~1"),
+			requirementFile("req~other-feature-fixture-requirement~1", "feat~other-fixture-feature~1"),
+		},
 		expectValid(false),
 	)
 }

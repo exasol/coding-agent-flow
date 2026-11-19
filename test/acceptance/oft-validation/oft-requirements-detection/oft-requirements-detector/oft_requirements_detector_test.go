@@ -5,6 +5,7 @@ package oftrequirementsdetector
 import (
 	"testing"
 
+	codingagentflow "github.com/exasol/coding-agent-flow"
 	"github.com/exasol/coding-agent-flow/test/acceptance"
 	oftvalidation "github.com/exasol/coding-agent-flow/test/acceptance/oft-validation"
 )
@@ -17,7 +18,7 @@ OFT Requirement document
 `
 
 func requirementFiles(path, requirementID string) []acceptance.File {
-	return oftvalidation.Files(oftvalidation.File{Path: path, Template: requirementTemplate, Parameters: []string{requirementID}})
+	return []acceptance.File{oftvalidation.File(path, requirementTemplate, requirementID)}
 }
 
 func expectRequirementFound(requirementID string, found bool) func(codingagentflow.OFTValidation) error {

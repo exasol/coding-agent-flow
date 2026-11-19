@@ -49,7 +49,12 @@ func NewOFTTracingValidator() OFTTracingValidator {
 }
 ```
 
-`internal/oftvalidation/architecture_test.go` checks the imports of each layer.
+`internal/architecture_test.go` checks the layers of every domain. A domain is a folder under `internal/` with a `domain/` folder, such as `internal/oftvalidation/`, and it has the layers `domain/`, `application/port/`, `application/service/`, and `adapter/`:
+
+* archunit checks that each layer selects at least one package and that the layers depend inward: the domain refers only to itself, `internal/global/`, and the standard library; the port avoids the service and the adapters; the service avoids the adapters; the adapters avoid the service.
+* `go/parser` checks that the domain, the port, and the service avoid `os` and `net`, because archunit applies its rules to module packages only.
+
+The test finds a new domain automatically.
 
 ## Acceptance Tests
 
