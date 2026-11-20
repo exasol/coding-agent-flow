@@ -125,28 +125,3 @@ func TestTraceKeepsTheFirstDiagnostics(t *testing.T) {
 		t.Fatalf("expected exactly %d bytes of diagnostics in the error, got %d bytes of error", maximumDiagnosticsSize, len(err.Error()))
 	}
 }
-
-func TestTraceReportsAnUnreadableJar(t *testing.T) {
-	jar := filepath.Join(t.TempDir(), "openfasttrace.jar")
-	if err := os.WriteFile(jar, []byte("no JAR content"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv(jarEnvironmentVariable, jar)
-
-	_, err := NewAdapter().Trace(context.Background(), global.NewTargetProject(t.TempDir()))
-
-	if err == nil || !strings.Contains(err.Error(), jarEnvironmentVariable) || !strings.Contains(err.Error(), "help: exit status 1: ") {
-		t.Fatalf("expected the failed version check of the JAR with the Java diagnostics, got %v", err)
-	}
-}
-
-// Exit code 1 without a readable ASpec report is a tool failure, not tracing with defects.
-func TestTraceRefusesExitCodeOneWithoutReport(t *testing.T) {
-	fakeJavaScript(t, "echo 'Error: Invalid or corrupt jarfile' >&2\nexit 1")
-
-	_, err := trace(t, context.Background())
-
-	if err == nil || !strings.Contains(err.Error(), "read OFT trace") || !strings.Contains(err.Error(), "corrupt jarfile") {
-		t.Fatalf("expected a tool failure with the diagnostics, got %v", err)
-	}
-}

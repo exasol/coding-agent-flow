@@ -123,6 +123,29 @@ Feature: OFT Tracing Validator
     Then the OFT Validation response has valid `true`
     And the OFT Validation response reports `true` for `feat` specification item ID `feat~linked-fixture-feature~1`
 
+  @id:scn~oft-tracing-validator_unreadable-file~1
+  # Covers: req~oft-tracing-validation~1
+  # Needs: at
+  Scenario: Return an error when OFT can't read a file of the target project
+    Given a target project path containing `features.md` with the OFT Feature `feat~unreadable-fixture-feature~1` that needs an OFT Requirement
+    And an unreadable `requirements.md`
+    When the caller validates OFT tracing for the target project path
+    Then the caller receives an error containing `Error reading`
+
+  @id:scn~oft-tracing-validator_unusable-jar~1
+  # Covers: req~oft-tracing-validation~1
+  # Needs: at
+  Scenario Outline: Return an error when OPENFASTTRACE_JAR is unusable
+    Given `OPENFASTTRACE_JAR` points to <jar>
+    And a target project path containing `features.md` with the OFT Feature `feat~jar-fixture-feature~1` that needs an OFT Requirement
+    When the caller validates OFT tracing for the target project path
+    Then the caller receives an error containing `OPENFASTTRACE_JAR`
+
+    Examples:
+      | jar                   |
+      | a missing file        |
+      | a file that is no JAR |
+
   @id:scn~oft-tracing-validator_read-only~1
   # Covers: req~oft-tracing-validation~1
   # Needs: at

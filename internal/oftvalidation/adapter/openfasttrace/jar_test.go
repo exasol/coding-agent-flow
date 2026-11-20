@@ -10,16 +10,6 @@ import (
 	"testing"
 )
 
-func TestLocateJarReportsAMissingConfiguredJar(t *testing.T) {
-	t.Setenv(jarEnvironmentVariable, filepath.Join(t.TempDir(), "openfasttrace.jar"))
-
-	_, err := locateJar(context.Background())
-
-	if err == nil || !strings.Contains(err.Error(), jarEnvironmentVariable) {
-		t.Fatalf("expected an error naming %s for a missing JAR, got %v", jarEnvironmentVariable, err)
-	}
-}
-
 // The download error keeps the first maximumDiagnosticsSize bytes of the Maven output.
 func TestLocateJarKeepsTheFirstMavenOutput(t *testing.T) {
 	directory := t.TempDir()

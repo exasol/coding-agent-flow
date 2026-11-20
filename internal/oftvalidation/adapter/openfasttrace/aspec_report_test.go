@@ -67,9 +67,3 @@ func TestReadASpecReportRefusesAnotherRootElement(t *testing.T) {
 		}
 	}
 }
-
-func TestReadASpecReportReportsAnUnreadableReport(t *testing.T) {
-	if _, err := readASpecReport([]byte("Exception in thread main"), domain.OFTFailure); err == nil {
-		t.Fatal("expected an error for output that is no ASpec report")
-	}
-}

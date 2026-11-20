@@ -3,6 +3,8 @@ package ofttracingvalidator
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	codingagentflow "github.com/exasol/coding-agent-flow"
@@ -197,6 +199,44 @@ func TestOFTTracingValidator_symlinkedTargetProject(t *testing.T) {
 		},
 		expectValidWith("feat~linked-fixture-feature~1"),
 	)
+}
+
+// [at -> scn~oft-tracing-validator_unreadable-file~1]
+func TestOFTTracingValidator_unreadableFile(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root reads every file")
+	}
+	unreadable := func(t *testing.T, files []acceptance.File) codingagentflow.TargetProject {
+		targetProject := acceptance.TargetProject(t, files)
+		requirements := filepath.Join(targetProject.Path(), "requirements.md")
+		if err := os.Chmod(requirements, 0); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = os.Chmod(requirements, 0o600) })
+		return targetProject
+	}
+	oftvalidation.ValidateFails(t, unreadable,
+		[]acceptance.File{
+			featureFile("feat~unreadable-fixture-feature~1"),
+			requirementFile("req~unreadable-fixture-requirement~1", "feat~unreadable-fixture-feature~1"),
+		},
+		acceptance.ExpectError("Error reading"),
+	)
+}
+
+// [at -> scn~oft-tracing-validator_unusable-jar~1]
+func TestOFTTracingValidator_unusableJar(t *testing.T) {
+	noJar := filepath.Join(t.TempDir(), "openfasttrace.jar")
+	if err := os.WriteFile(noJar, []byte("no JAR content"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, jar := range []string{filepath.Join(t.TempDir(), "missing.jar"), noJar} {
+		t.Setenv("OPENFASTTRACE_JAR", jar)
+		oftvalidation.ValidateFails(t, acceptance.TargetProject,
+			[]acceptance.File{featureFile("feat~jar-fixture-feature~1")},
+			acceptance.ExpectError("OPENFASTTRACE_JAR"),
+		)
+	}
 }
 
 // [at -> scn~oft-tracing-validator_read-only~1]
