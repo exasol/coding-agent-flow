@@ -14,13 +14,13 @@ Rationale: CAF uses a consistent input set for OFT validation.
 
 `req~oft-tracing-validation~1`
 
-CAF validates OFT Specification Items in the Target Project and returns an `OFTValidation` response. `valid` reports the validation result. `oftSpecificationItemIDs` maps each OFT Artifact Type to its OFT Specification Item IDs.
+CAF validates OFT Specification Items in the Target Project and returns an `OFTValidation` response. `valid` reports the validation result. `oftSpecificationItemIDs` maps each OFT Artifact Type to its OFT Specification Item IDs. CAF returns an error when it can't trace the Target Project, resolves a symbolic link as Target Project path, and leaves the Target Project unchanged.
 
 Covers:
 
 - `feat~oft-validation~1`
 
-Needs: scn, impl
+Needs: scn, impl, utest
 
 Rationale: CAF reports traceability results before implementation begins.
 

@@ -14,27 +14,45 @@ type aspecReport struct {
 	Collections []struct {
 		Type  domain.OFTArtifactType `xml:"doctype,attr"`
 		Items []struct {
-			ID       string `xml:"id"`
-			Revision int    `xml:"version"`
+			ID       string                   `xml:"id"`
+			Revision int                      `xml:"version"`
+			Needs    []domain.OFTArtifactType `xml:"coverage>needscoverage>needsobj"`
+			// For a link to another revision, OFT lists the declared target and the existing revision.
+			Covers []aspecLink `xml:"covering>coveredType"`
 		} `xml:"specobject"`
 	} `xml:"specobjects"`
 }
 
-// readASpecReport reads the specification item IDs from an aspec report.
-func readASpecReport(output []byte, valid bool) (domain.OFTValidation, error) {
+// aspecLink is a coverage link to an OFT Specification Item.
+type aspecLink struct {
+	ID       string                 `xml:"id"`
+	Revision int                    `xml:"version"`
+	Type     domain.OFTArtifactType `xml:"doctype"`
+}
+
+// readASpecReport reads the OFT Specification Items with their OFT Coverage from an aspec report.
+func readASpecReport(output []byte, result domain.OFTResult) (domain.OFTTrace, error) {
 	var report aspecReport
 	if err := xml.Unmarshal(output, &report); err != nil {
-		return domain.OFTValidation{}, fmt.Errorf("read OFT trace: %w", err)
+		return domain.OFTTrace{}, fmt.Errorf("read OFT trace: %w", err)
 	}
-	var ids []domain.OFTSpecificationItemID
+	var items []domain.OFTSpecificationItem
 	for _, collection := range report.Collections {
 		for _, item := range collection.Items {
 			id, err := domain.NewOFTSpecificationItemID(collection.Type, item.ID, item.Revision)
 			if err != nil {
-				return domain.OFTValidation{}, fmt.Errorf("read OFT trace: %w", err)
+				return domain.OFTTrace{}, fmt.Errorf("read OFT trace: %w", err)
 			}
-			ids = append(ids, id)
+			covers := make([]domain.OFTSpecificationItemID, 0, len(item.Covers))
+			for _, link := range item.Covers {
+				covered, err := domain.NewOFTSpecificationItemID(link.Type, link.ID, link.Revision)
+				if err != nil {
+					return domain.OFTTrace{}, fmt.Errorf("read OFT trace: coverage link of %s: %w", id, err)
+				}
+				covers = append(covers, covered)
+			}
+			items = append(items, domain.NewOFTSpecificationItem(id, domain.NewOFTCoverage(item.Needs, covers)))
 		}
 	}
-	return domain.NewOFTValidation(valid, ids), nil
+	return domain.NewOFTTrace(items, result), nil
 }
