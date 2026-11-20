@@ -162,3 +162,27 @@ func TestTraceKeepsTheFirstDiagnostics(t *testing.T) {
 		t.Fatalf("expected exactly %d bytes of diagnostics in the error, got %d bytes of error", maximumDiagnosticsSize, len(err.Error()))
 	}
 }
+
+// Regression: OpenFastTrace exits with code 0 and an empty report for a missing input path, so a missing Target Project
+// path or a regular file as Target Project path is an error, not valid tracing.
+func TestTraceRefusesATargetProjectPathThatIsNoDirectory(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "project.md")
+	if err := os.WriteFile(file, []byte("# Not a directory\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for name, test := range map[string]struct {
+		path string
+		want string
+	}{
+		"missing path":      {filepath.Join(t.TempDir(), "missing"), "no such file or directory"},
+		"regular file path": {file, "is not a directory"},
+	} {
+		fakeJava(t, "<specdocument></specdocument>", 0)
+
+		validation, err := NewAdapter().Trace(context.Background(), global.NewTargetProject(test.path))
+
+		if err == nil || !strings.Contains(err.Error(), "Target Project") || !strings.Contains(err.Error(), test.want) {
+			t.Errorf("%s: expected an error with %q, got valid %t, %v", name, test.want, validation.Valid(), err)
+		}
+	}
+}

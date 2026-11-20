@@ -5,10 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/exasol/coding-agent-flow/internal/global"
+	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/exasol/coding-agent-flow/internal/global"
 	"github.com/exasol/coding-agent-flow/internal/oftvalidation/application/port"
 	"github.com/exasol/coding-agent-flow/internal/oftvalidation/domain"
 )
@@ -30,6 +31,9 @@ func NewAdapter() Adapter {
 // Trace runs OpenFastTrace on the Target Project and reads its ASpec report. Exit code 0 is valid tracing, exit code 1 is tracing with defects, and a cancellation or any other result is an error. It keeps the ASpec report and the diagnostics within the limits of runBounded.
 func (Adapter) Trace(ctx context.Context, targetProject global.TargetProject) (domain.OFTValidation, error) {
 	// [impl -> req~oft-requirements-detection~1]
+	if err := requireDirectory(targetProject.Path()); err != nil {
+		return domain.OFTValidation{}, err
+	}
 	jar, err := locateJar(ctx)
 	if err != nil {
 		return domain.OFTValidation{}, err
@@ -47,6 +51,19 @@ func (Adapter) Trace(ctx context.Context, targetProject global.TargetProject) (d
 		return domain.OFTValidation{}, withDiagnostics(err, stderr)
 	}
 	return validation, nil
+}
+
+// requireDirectory fails when the Target Project path is missing or is not a directory. OpenFastTrace reports valid
+// tracing with an empty report for a missing input path, so CAF checks the path before it runs OpenFastTrace.
+func requireDirectory(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("inspect Target Project path: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("inspect Target Project path: %s is not a directory", path)
+	}
+	return nil
 }
 
 // traceResult maps the result of the OpenFastTrace run: exit code 0 is valid tracing, exit code 1 is tracing with
