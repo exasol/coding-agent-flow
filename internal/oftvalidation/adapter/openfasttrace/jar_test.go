@@ -121,8 +121,9 @@ func TestVersionPatternReadsTheVersion(t *testing.T) {
 	}
 }
 
-// fakeMaven puts an mvn script first on the PATH. It records its arguments and, if createJar is true, creates the JAR
-// in the repository of -Dmaven.repo.local, like the Maven download. It returns the file with the recorded arguments.
+// fakeMaven puts an mvn script first on the PATH. It records its arguments and its working directory (as a line
+// "dir=<path>") and, if createJar is true, creates the JAR in the repository of -Dmaven.repo.local, like the Maven
+// download. It returns the file with the recorded calls.
 func fakeMaven(t *testing.T, createJar bool, exitCode int) string {
 	t.Helper()
 	directory := t.TempDir()
@@ -132,11 +133,12 @@ func fakeMaven(t *testing.T, createJar bool, exitCode int) string {
 		create = fmt.Sprintf("mkdir -p \"$repository/org/itsallcode/openfasttrace/openfasttrace/%[1]s\" && touch \"$repository/org/itsallcode/openfasttrace/openfasttrace/%[1]s/openfasttrace-%[1]s.jar\"\n", openFastTraceVersion)
 	}
 	script := fmt.Sprintf(`#!/bin/sh
-echo "$@" >> '%s'
+echo "$@" >> '%[1]s'
+echo "dir=$(pwd -P)" >> '%[1]s'
 for argument in "$@"; do
   case "$argument" in -Dmaven.repo.local=*) repository="${argument#-Dmaven.repo.local=}";; esac
 done
-%sexit %d
+%[2]sexit %[3]d
 `, calls, create, exitCode)
 	if err := os.WriteFile(filepath.Join(directory, "mvn"), []byte(script), 0o755); err != nil {
 		t.Fatal(err)
@@ -219,5 +221,41 @@ func TestLocateJarUsesTheMavenRepositoryInTheHomeDirectory(t *testing.T) {
 	}
 	if recorded := recordedCalls(t, calls); !strings.Contains(recorded, "-Dmaven.repo.local="+filepath.Join(home, ".m2", "repository")) {
 		t.Fatalf("expected the home repository in the Maven arguments %q", recorded)
+	}
+}
+
+// Regression: Maven runs in an empty directory outside the current working directory, so a Target Project's
+// .mvn/maven.config, .mvn/extensions.xml, or pom.xml can't change the download command or load build extensions.
+func TestLocateJarInRepositoryRunsMavenOutsideTheWorkingDirectory(t *testing.T) {
+	project := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(project, ".mvn"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range []string{filepath.Join(".mvn", "maven.config"), filepath.Join(".mvn", "extensions.xml"), "pom.xml"} {
+		if err := os.WriteFile(filepath.Join(project, file), []byte("untrusted"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Chdir(project)
+	calls := fakeMaven(t, true, 0)
+
+	if _, err := locateJarInRepository(context.Background(), t.TempDir()); err != nil {
+		t.Fatal(err)
+	}
+
+	_, directory, found := strings.Cut(recordedCalls(t, calls), "dir=")
+	directory = strings.TrimSpace(directory)
+	resolvedProject, err := filepath.EvalSymlinks(project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !found || directory == "" {
+		t.Fatalf("expected a recorded Maven working directory, got %q", recordedCalls(t, calls))
+	}
+	if relative, err := filepath.Rel(resolvedProject, directory); err == nil && !strings.HasPrefix(relative, "..") {
+		t.Fatalf("expected Maven to run outside the working directory %q, got %q", resolvedProject, directory)
+	}
+	if _, err := os.Stat(directory); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("expected CAF to remove the Maven working directory %q after the download, got %v", directory, err)
 	}
 }

@@ -58,7 +58,9 @@ func mavenRepository() (string, error) {
 
 // locateJarInRepository returns the OpenFastTrace JAR from the local Maven repository. When the JAR is missing, Maven
 // downloads it into this repository, which CAF passes explicitly, so the download lands in the same place for every
-// Maven configuration.
+// Maven configuration. Maven runs in a new empty directory, because it reads .mvn/maven.config, .mvn/extensions.xml, and
+// pom.xml from its working directory and its parents; a Target Project could otherwise change the command or load
+// build extensions.
 func locateJarInRepository(ctx context.Context, repository string) (string, error) {
 	jar := filepath.Join(
 		repository,
@@ -75,7 +77,12 @@ func locateJarInRepository(ctx context.Context, repository string) (string, erro
 		return "", fmt.Errorf("inspect OpenFastTrace JAR: %w", err)
 	}
 
-	output, err := runWithDiagnostics(ctx,
+	directory, err := os.MkdirTemp("", "caf-maven-")
+	if err != nil {
+		return "", fmt.Errorf("create working directory for Maven: %w", err)
+	}
+	defer os.RemoveAll(directory)
+	output, err := runWithDiagnosticsIn(ctx, directory,
 		"mvn",
 		"--batch-mode",
 		mavenDependencyPluginGet,

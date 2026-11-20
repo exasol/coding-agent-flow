@@ -61,11 +61,17 @@ func runBounded(ctx context.Context, outputLimit int, name string, arguments ...
 	return stdout.buffer.Bytes(), stderr.buffer.String(), err
 }
 
-// runWithDiagnostics runs the command and returns the first maximumDiagnosticsSize bytes of its combined standard
-// output and standard error, and the error of the run. The command runs to its end.
+// runWithDiagnostics runs the command in the current working directory and returns the first maximumDiagnosticsSize
+// bytes of its combined standard output and standard error, and the error of the run. The command runs to its end.
 func runWithDiagnostics(ctx context.Context, name string, arguments ...string) (string, error) {
+	return runWithDiagnosticsIn(ctx, "", name, arguments...)
+}
+
+// runWithDiagnosticsIn works like runWithDiagnostics, but runs the command in directory.
+func runWithDiagnosticsIn(ctx context.Context, directory string, name string, arguments ...string) (string, error) {
 	output := &limitedBuffer{limit: maximumDiagnosticsSize}
 	command := exec.CommandContext(ctx, name, arguments...)
+	command.Dir = directory
 	command.Stdout = output
 	command.Stderr = output
 	command.WaitDelay = waitDelay
