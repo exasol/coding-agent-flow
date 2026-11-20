@@ -3,9 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
+
+	exaerror "github.com/exasol/error-reporting-go"
 
 	"github.com/exasol/coding-agent-flow/internal/global"
 	"github.com/exasol/coding-agent-flow/internal/validationentrypoint/application/port"
@@ -160,5 +163,83 @@ func TestRunReportsAResultUnderAnotherNameAsToolFailure(t *testing.T) {
 	}
 	if check, _ := report.Result("check"); !strings.Contains(check.Diagnostics(), "other") {
 		t.Errorf("expected the returned name in the diagnostics, got %q", check.Diagnostics())
+	}
+}
+
+// cancelingValidator cancels the context during Validate and returns the cancellation.
+type cancelingValidator struct {
+	cancel context.CancelFunc
+}
+
+func (cancelingValidator) Name() string {
+	return "canceling"
+}
+
+func (validator cancelingValidator) Validate(ctx context.Context, _ global.TargetProject) (domain.ValidationResult, error) {
+	validator.cancel()
+	return domain.ValidationResult{}, ctx.Err()
+}
+
+// A cancellation during a validator stops the run and returns the cancellation, also for the last selected validator.
+func TestRunReturnsACancellationDuringAValidator(t *testing.T) {
+	for name, selection := range map[string][]string{
+		"last validator":  {"canceling"},
+		"inner validator": {"canceling", "next"},
+	} {
+		ctx, cancel := context.WithCancel(context.Background())
+		next := &recordingValidator{name: "next"}
+		runner, err := NewValidationRunner(fakeReader{selection: selection}, cancelingValidator{cancel: cancel}, next)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = runner.Run(ctx, global.NewTargetProject("project"))
+
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("%s: expected the cancellation, got %v", name, err)
+		}
+		if next.called {
+			t.Errorf("%s: expected no run of the next validator", name)
+		}
+		cancel()
+	}
+}
+
+// recordingValidator passes and records that it ran.
+type recordingValidator struct {
+	name   string
+	called bool
+}
+
+func (validator *recordingValidator) Name() string {
+	return validator.name
+}
+
+func (validator *recordingValidator) Validate(context.Context, global.TargetProject) (domain.ValidationResult, error) {
+	validator.called = true
+	return domain.NewValidationResult(validator.name, domain.Pass, "CODE", "message"), nil
+}
+
+// The message of a failed validator names the E-CAF code of its error, and the error text stays in the diagnostics.
+func TestRunNamesTheErrorCodeOfAFailedValidator(t *testing.T) {
+	for name, test := range map[string]struct {
+		err  error
+		want string
+	}{
+		"error code":         {exaerror.New("E-CAF-5").Message("Failed to read /home/user/project/secret.md."), "The validator failed with E-CAF-5."},
+		"wrapped error code": {fmt.Errorf("trace: %w", exaerror.New("E-CAF-9").Message("Paths differ.")), "The validator failed with E-CAF-9."},
+		"no error code":      {errors.New("broken at /home/user/project/secret.md"), "The validator failed."},
+	} {
+		runner, err := NewValidationRunner(fakeReader{selection: []string{"failing"}}, fakeValidator{name: "failing", err: test.err})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		report, err := runner.Run(context.Background(), global.NewTargetProject("project"))
+
+		failing, _ := report.Result("failing")
+		if err != nil || failing.Message() != test.want || failing.Code() != FailedValidationCode || failing.Diagnostics() != test.err.Error() {
+			t.Errorf("%s: got %q %q, diagnostics %q, %v; want %q", name, failing.Code(), failing.Message(), failing.Diagnostics(), err, test.want)
+		}
 	}
 }

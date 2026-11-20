@@ -3,7 +3,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
 
 	exaerror "github.com/exasol/error-reporting-go"
 
@@ -19,9 +21,23 @@ const (
 	MismatchingValidationCode = "CAF-VALIDATION-NAME-MISMATCH"
 )
 
-// failedValidationMessage is the fixed message of a failed Validation. Tool errors can hold file paths and command
-// output, so they go to the diagnostics of the result.
+// failedValidationMessage is the message of a failed Validation. Tool errors can hold file paths and command output, so
+// the message names only the error code, and the error text goes to the diagnostics of the result.
 const failedValidationMessage = "The validator failed."
+
+// errorCodePattern matches the error code at the start of an ExaError text, such as E-CAF-5.
+var errorCodePattern = regexp.MustCompile(`^[EWF]-[A-Z]+-[0-9]+`)
+
+// failureMessage names the error code of the first ExaError in the error chain, or returns failedValidationMessage.
+func failureMessage(err error) string {
+	var exaError *exaerror.ExaError
+	if errors.As(err, &exaError) {
+		if code := errorCodePattern.FindString(exaError.Error()); code != "" {
+			return "The validator failed with " + code + "."
+		}
+	}
+	return failedValidationMessage
+}
 
 type ValidationRunner struct {
 	reader     port.ConfigurationReader
@@ -57,12 +73,16 @@ func (runner ValidationRunner) Run(ctx context.Context, targetProject global.Tar
 	if err != nil {
 		return domain.ValidationReport{}, err
 	}
+	if err := ctx.Err(); err != nil {
+		return domain.ValidationReport{}, err
+	}
 	results := make([]domain.ValidationResult, 0, len(selection))
 	for _, name := range selection {
+		results = append(results, runner.run(ctx, targetProject, name))
+		// A cancellation during the validator is the result of the run, not a failure of the validator.
 		if err := ctx.Err(); err != nil {
 			return domain.ValidationReport{}, err
 		}
-		results = append(results, runner.run(ctx, targetProject, name))
 	}
 	return domain.NewValidationReport(results), nil
 }
@@ -75,7 +95,7 @@ func (runner ValidationRunner) run(ctx context.Context, targetProject global.Tar
 	}
 	result, err := validator.Validate(ctx, targetProject)
 	if err != nil {
-		return domain.NewValidationResult(name, domain.ToolFailure, FailedValidationCode, failedValidationMessage).WithDiagnostics(err.Error())
+		return domain.NewValidationResult(name, domain.ToolFailure, FailedValidationCode, failureMessage(err)).WithDiagnostics(err.Error())
 	}
 	if result.Validation() != name {
 		return domain.NewValidationResult(name, domain.ToolFailure, MismatchingValidationCode, "The validator returned a result for another validation.").
