@@ -15,3 +15,4 @@ Initial release of coding-agent-flow.
 * #41: Acceptance Tests: OFT Tracing Validator
 * #43: Code Implementation: OFT Tracing Validator
 * #45: Use Case: Link Checker
+* #52: Use Case: OFT Tracing Validator – Tracing Rules in the Domain

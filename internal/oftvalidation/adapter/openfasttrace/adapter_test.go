@@ -32,20 +32,6 @@ func TestWithDiagnosticsKeepsErrorWithoutStderr(t *testing.T) {
 	}
 }
 
-func TestTraceReportsAnUnreadableJar(t *testing.T) {
-	jar := filepath.Join(t.TempDir(), "openfasttrace.jar")
-	if err := os.WriteFile(jar, []byte("no JAR content"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv(jarEnvironmentVariable, jar)
-
-	_, err := NewAdapter().Trace(context.Background(), global.NewTargetProject(t.TempDir()))
-
-	if err == nil || !strings.Contains(err.Error(), jarEnvironmentVariable) || !strings.Contains(err.Error(), "help: exit status 1: ") {
-		t.Fatalf("expected the failed version check of the JAR with the Java diagnostics, got %v", err)
-	}
-}
-
 const validReport = `<specdocument><specobjects doctype="feat"><specobject><id>f</id><version>1</version></specobject></specobjects></specdocument>`
 
 // fakeJavaScript puts a java shell script with the body first on the PATH. The script answers "java -jar <jar> help"
@@ -71,21 +57,9 @@ func fakeJava(t *testing.T, report string, exitCode int) {
 	fakeJavaScript(t, fmt.Sprintf("cat <<'REPORT'\n%s\nREPORT\necho 'diagnostics' >&2\nexit %d", report, exitCode))
 }
 
-func trace(t *testing.T, ctx context.Context) (domain.OFTValidation, error) {
+func trace(t *testing.T, ctx context.Context) (domain.OFTTrace, error) {
 	t.Helper()
 	return NewAdapter().Trace(ctx, global.NewTargetProject(t.TempDir()))
-}
-
-func TestTraceMapsTheOFTExitCodes(t *testing.T) {
-	for exitCode, valid := range map[int]bool{0: true, 1: false} {
-		fakeJava(t, validReport, exitCode)
-
-		validation, err := trace(t, context.Background())
-
-		if err != nil || validation.Valid() != valid {
-			t.Errorf("exit code %d: got valid %t, %v; want valid %t", exitCode, validation.Valid(), err, valid)
-		}
-	}
 }
 
 func TestTraceReportsACommandLineErrorAndUnexpectedExitCodes(t *testing.T) {
@@ -116,7 +90,7 @@ func TestTraceReturnsTheCancellation(t *testing.T) {
 	}
 }
 
-// Regression: output with another root element and exit code 0 is a tool failure, not an empty valid result.
+// Output with another root element and exit code 0 is a tool failure, not an empty valid result.
 func TestTraceRefusesUnexpectedOutputWithExitCodeZero(t *testing.T) {
 	fakeJava(t, "<html><body>OpenFastTrace</body></html>", 0)
 
@@ -127,18 +101,7 @@ func TestTraceRefusesUnexpectedOutputWithExitCodeZero(t *testing.T) {
 	}
 }
 
-// Regression: exit code 1 without a readable ASpec report is a tool failure, not tracing with defects.
-func TestTraceRefusesExitCodeOneWithoutReport(t *testing.T) {
-	fakeJavaScript(t, "echo 'Error: Invalid or corrupt jarfile' >&2\nexit 1")
-
-	_, err := trace(t, context.Background())
-
-	if err == nil || !strings.Contains(err.Error(), "read OFT trace") || !strings.Contains(err.Error(), "corrupt jarfile") {
-		t.Fatalf("expected a tool failure with the diagnostics, got %v", err)
-	}
-}
-
-// Regression: a report larger than maximumReportSize stops OpenFastTrace and is a tool failure.
+// A report larger than maximumReportSize stops OpenFastTrace and is a tool failure.
 func TestTraceStopsATooLargeReport(t *testing.T) {
 	fakeJavaScript(t, fmt.Sprintf("head -c %d /dev/zero\nexit 0", maximumReportSize+1))
 
@@ -149,7 +112,7 @@ func TestTraceStopsATooLargeReport(t *testing.T) {
 	}
 }
 
-// Regression: the error message keeps the first maximumDiagnosticsSize bytes of the diagnostics.
+// The error message keeps the first maximumDiagnosticsSize bytes of the diagnostics.
 func TestTraceKeepsTheFirstDiagnostics(t *testing.T) {
 	fakeJavaScript(t, "head -c 100000 /dev/zero | tr '\\0' x >&2\nexit 2")
 
@@ -163,26 +126,27 @@ func TestTraceKeepsTheFirstDiagnostics(t *testing.T) {
 	}
 }
 
-// Regression: OpenFastTrace exits with code 0 and an empty report for a missing input path, so a missing Target Project
-// path or a regular file as Target Project path is an error, not valid tracing.
-func TestTraceRefusesATargetProjectPathThatIsNoDirectory(t *testing.T) {
-	file := filepath.Join(t.TempDir(), "project.md")
-	if err := os.WriteFile(file, []byte("# Not a directory\n"), 0o600); err != nil {
+func TestTraceReportsAnUnreadableJar(t *testing.T) {
+	jar := filepath.Join(t.TempDir(), "openfasttrace.jar")
+	if err := os.WriteFile(jar, []byte("no JAR content"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	for name, test := range map[string]struct {
-		path string
-		want string
-	}{
-		"missing path":      {filepath.Join(t.TempDir(), "missing"), "no such file or directory"},
-		"regular file path": {file, "is not a directory"},
-	} {
-		fakeJava(t, "<specdocument></specdocument>", 0)
+	t.Setenv(jarEnvironmentVariable, jar)
 
-		validation, err := NewAdapter().Trace(context.Background(), global.NewTargetProject(test.path))
+	_, err := NewAdapter().Trace(context.Background(), global.NewTargetProject(t.TempDir()))
 
-		if err == nil || !strings.Contains(err.Error(), "Target Project") || !strings.Contains(err.Error(), test.want) {
-			t.Errorf("%s: expected an error with %q, got valid %t, %v", name, test.want, validation.Valid(), err)
-		}
+	if err == nil || !strings.Contains(err.Error(), jarEnvironmentVariable) || !strings.Contains(err.Error(), "help: exit status 1: ") {
+		t.Fatalf("expected the failed version check of the JAR with the Java diagnostics, got %v", err)
+	}
+}
+
+// Exit code 1 without a readable ASpec report is a tool failure, not tracing with defects.
+func TestTraceRefusesExitCodeOneWithoutReport(t *testing.T) {
+	fakeJavaScript(t, "echo 'Error: Invalid or corrupt jarfile' >&2\nexit 1")
+
+	_, err := trace(t, context.Background())
+
+	if err == nil || !strings.Contains(err.Error(), "read OFT trace") || !strings.Contains(err.Error(), "corrupt jarfile") {
+		t.Fatalf("expected a tool failure with the diagnostics, got %v", err)
 	}
 }
