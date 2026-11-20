@@ -3,6 +3,9 @@ package service
 
 import (
 	"context"
+	"fmt"
+
+	exaerror "github.com/exasol/error-reporting-go"
 
 	"github.com/exasol/coding-agent-flow/internal/global"
 	"github.com/exasol/coding-agent-flow/internal/validationentrypoint/application/port"
@@ -11,9 +14,14 @@ import (
 
 // Codes of the results that the Validation Runner creates.
 const (
-	UnknownValidationCode = "CAF-UNKNOWN-VALIDATOR"
-	FailedValidationCode  = "CAF-VALIDATION-FAILED"
+	UnknownValidationCode     = "CAF-UNKNOWN-VALIDATOR"
+	FailedValidationCode      = "CAF-VALIDATION-FAILED"
+	MismatchingValidationCode = "CAF-VALIDATION-NAME-MISMATCH"
 )
+
+// failedValidationMessage is the fixed message of a failed Validation. Tool errors can hold file paths and command
+// output, so they go to the diagnostics of the result.
+const failedValidationMessage = "The validator failed."
 
 type ValidationRunner struct {
 	reader     port.ConfigurationReader
@@ -21,12 +29,25 @@ type ValidationRunner struct {
 }
 
 // NewValidationRunner creates a ValidationRunner that reads the Validation Selection with reader and runs the validators.
-func NewValidationRunner(reader port.ConfigurationReader, validators ...port.Validator) ValidationRunner {
+// Each validator needs a unique, non-empty name, so each selected name runs exactly the wired validator.
+func NewValidationRunner(reader port.ConfigurationReader, validators ...port.Validator) (ValidationRunner, error) {
 	byName := make(map[string]port.Validator, len(validators))
 	for _, validator := range validators {
-		byName[validator.Name()] = validator
+		name := validator.Name()
+		if name == "" {
+			return ValidationRunner{}, exaerror.New("E-CAF-7").
+				Message("A validator of the Validation Runner has an empty name.").
+				Mitigation("Give each validator a unique name.")
+		}
+		if _, duplicate := byName[name]; duplicate {
+			return ValidationRunner{}, exaerror.New("E-CAF-8").
+				Message("Two validators of the Validation Runner have the name {{name}}.").
+				Parameter("name", name).
+				Mitigation("Give each validator a unique name.")
+		}
+		byName[name] = validator
 	}
-	return ValidationRunner{reader: reader, validators: byName}
+	return ValidationRunner{reader: reader, validators: byName}, nil
 }
 
 // Run runs each selected Validation in the selected order and returns the Validation Report.
@@ -54,7 +75,11 @@ func (runner ValidationRunner) run(ctx context.Context, targetProject global.Tar
 	}
 	result, err := validator.Validate(ctx, targetProject)
 	if err != nil {
-		return domain.NewValidationResult(name, domain.ToolFailure, FailedValidationCode, err.Error())
+		return domain.NewValidationResult(name, domain.ToolFailure, FailedValidationCode, failedValidationMessage).WithDiagnostics(err.Error())
+	}
+	if result.Validation() != name {
+		return domain.NewValidationResult(name, domain.ToolFailure, MismatchingValidationCode, "The validator returned a result for another validation.").
+			WithDiagnostics(fmt.Sprintf("selected %q, returned %q", name, result.Validation()))
 	}
 	return result
 }

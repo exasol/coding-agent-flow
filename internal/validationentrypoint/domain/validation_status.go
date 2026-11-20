@@ -28,3 +28,13 @@ func (status ValidationStatus) severity() int {
 		return 3
 	}
 }
+
+// supported returns the status, or ToolFailure for any other status.
+func (status ValidationStatus) supported() ValidationStatus {
+	switch status {
+	case Pass, Finding, ToolFailure, NotApplicable:
+		return status
+	default:
+		return ToolFailure
+	}
+}

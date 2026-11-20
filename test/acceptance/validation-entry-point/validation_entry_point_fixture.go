@@ -33,7 +33,10 @@ func OFTTracing(valid bool) []acceptance.File {
 // Run runs the Validation Runner for a target-project fixture with one or more files.
 func Run(t *testing.T, files []acceptance.File, then func(codingagentflow.ValidationReport) error) {
 	t.Helper()
-	runner := codingagentflow.NewValidationRunner()
+	runner, err := codingagentflow.NewValidationRunner()
+	if err != nil {
+		t.Fatal(err)
+	}
 	acceptance.Run(t, files, acceptance.TargetProject, runner.Run, then)
 }
 

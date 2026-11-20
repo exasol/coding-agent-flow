@@ -27,6 +27,6 @@ const (
 type ValidationRunner = service.ValidationRunner
 
 // NewValidationRunner creates a ValidationRunner that reads .caf.yaml in the Target Project root and runs the oft-tracing-validator Validation with the OFT Tracing Validator.
-func NewValidationRunner() ValidationRunner {
+func NewValidationRunner() (ValidationRunner, error) {
 	return service.NewValidationRunner(yamlconfig.NewReader(), ofttracingvalidator.NewValidator(NewOFTTracingValidator()))
 }

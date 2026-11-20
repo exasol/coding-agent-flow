@@ -116,7 +116,7 @@ func TestTraceReturnsTheCancellation(t *testing.T) {
 	}
 }
 
-// Regression: output with another root element and exit code 0 is a tool failure, not an empty valid result.
+// Output with another root element and exit code 0 is a tool failure, not an empty valid result.
 func TestTraceRefusesUnexpectedOutputWithExitCodeZero(t *testing.T) {
 	fakeJava(t, "<html><body>OpenFastTrace</body></html>", 0)
 
@@ -127,7 +127,7 @@ func TestTraceRefusesUnexpectedOutputWithExitCodeZero(t *testing.T) {
 	}
 }
 
-// Regression: exit code 1 without a readable ASpec report is a tool failure, not tracing with defects.
+// Exit code 1 without a readable ASpec report is a tool failure, not tracing with defects.
 func TestTraceRefusesExitCodeOneWithoutReport(t *testing.T) {
 	fakeJavaScript(t, "echo 'Error: Invalid or corrupt jarfile' >&2\nexit 1")
 
@@ -138,7 +138,7 @@ func TestTraceRefusesExitCodeOneWithoutReport(t *testing.T) {
 	}
 }
 
-// Regression: a report larger than maximumReportSize stops OpenFastTrace and is a tool failure.
+// A report larger than maximumReportSize stops OpenFastTrace and is a tool failure.
 func TestTraceStopsATooLargeReport(t *testing.T) {
 	fakeJavaScript(t, fmt.Sprintf("head -c %d /dev/zero\nexit 0", maximumReportSize+1))
 
@@ -149,7 +149,7 @@ func TestTraceStopsATooLargeReport(t *testing.T) {
 	}
 }
 
-// Regression: the error message keeps the first maximumDiagnosticsSize bytes of the diagnostics.
+// The error message keeps the first maximumDiagnosticsSize bytes of the diagnostics.
 func TestTraceKeepsTheFirstDiagnostics(t *testing.T) {
 	fakeJavaScript(t, "head -c 100000 /dev/zero | tr '\\0' x >&2\nexit 2")
 
@@ -163,7 +163,7 @@ func TestTraceKeepsTheFirstDiagnostics(t *testing.T) {
 	}
 }
 
-// Regression: OpenFastTrace exits with code 0 and an empty report for a missing input path, so a missing Target Project
+// OpenFastTrace exits with code 0 and an empty report for a missing input path, so a missing Target Project
 // path or a regular file as Target Project path is an error, not valid tracing.
 func TestTraceRefusesATargetProjectPathThatIsNoDirectory(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "project.md")

@@ -16,12 +16,9 @@ func NewValidationReport(results []ValidationResult) ValidationReport {
 	// [impl -> req~validation-result~1]
 	status := NotApplicable
 	for _, result := range results {
-		if result.status.severity() > status.severity() {
-			status = result.status
+		if result.Status().severity() > status.severity() {
+			status = result.Status()
 		}
-	}
-	if status.severity() == ToolFailure.severity() {
-		status = ToolFailure
 	}
 	return ValidationReport{status: status, results: slices.Clone(results)}
 }
@@ -65,7 +62,7 @@ type validationReportResponse struct {
 func (report ValidationReport) MarshalJSON() ([]byte, error) {
 	results := make([]validationResultResponse, 0, len(report.results))
 	for _, result := range report.results {
-		results = append(results, validationResultResponse{Validation: result.validation, Status: result.status, Code: result.code, Message: result.message})
+		results = append(results, validationResultResponse{Validation: result.validation, Status: result.Status(), Code: result.code, Message: result.message})
 	}
 	return json.Marshal(validationReportResponse{Status: report.Status(), Results: results})
 }
