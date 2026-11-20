@@ -14,3 +14,5 @@ Initial release of coding-agent-flow.
 * #12: Added the `caf validate` machine interface with project discovery, CI results, and Codex Stop-hook responses.
 * #37: Documentation: OFT Tracing Validator
 * #41: Acceptance Tests: OFT Tracing Validator
+* #43: Code Implementation: OFT Tracing Validator
+* #45: Use Case: Link Checker
