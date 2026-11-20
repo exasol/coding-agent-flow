@@ -32,8 +32,8 @@ func TestValidationSelectionReadsTheSelectedValidationsInOrder(t *testing.T) {
 func TestValidationSelectionReportsAMissingFile(t *testing.T) {
 	_, err := NewReader().ValidationSelection(context.Background(), global.NewTargetProject(t.TempDir()))
 
-	if err == nil || !strings.Contains(err.Error(), "E-CAF-2") {
-		t.Fatalf("expected E-CAF-2, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "E-CAF-5") {
+		t.Fatalf("expected E-CAF-5, got %v", err)
 	}
 }
 
@@ -47,8 +47,8 @@ func TestValidationSelectionRefusesInvalidConfigurations(t *testing.T) {
 		"two documents":   "version: 1\nvalidators: [a]\n---\nversion: 1\n",
 		"no YAML mapping": "- a\n",
 	} {
-		if _, err := selection(t, content); err == nil || !strings.Contains(err.Error(), "E-CAF-3") {
-			t.Errorf("%s: expected E-CAF-3, got %v", name, err)
+		if _, err := selection(t, content); err == nil || !strings.Contains(err.Error(), "E-CAF-6") {
+			t.Errorf("%s: expected E-CAF-6, got %v", name, err)
 		}
 	}
 }

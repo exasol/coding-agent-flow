@@ -38,7 +38,7 @@ func run(t *testing.T, ctx context.Context, reader fakeReader) (domain.Validatio
 	runner := NewValidationRunner(reader,
 		fakeValidator{name: "passing", status: domain.Pass},
 		fakeValidator{name: "finding", status: domain.Finding},
-		fakeValidator{name: "failing", err: errors.New("E-CAF-9: broken")},
+		fakeValidator{name: "failing", err: errors.New("broken")},
 	)
 	return runner.Run(ctx, global.NewTargetProject("project"))
 }
@@ -76,13 +76,13 @@ func TestRunReportsUnknownValidationsAndValidationErrorsAsToolFailures(t *testin
 	if !reflect.DeepEqual(summary(report), want) {
 		t.Fatalf("got %v, want %v", summary(report), want)
 	}
-	if failing, _ := report.Result("failing"); failing.Message() != "E-CAF-9: broken" {
+	if failing, _ := report.Result("failing"); failing.Message() != "broken" {
 		t.Fatalf("got message %q", failing.Message())
 	}
 }
 
 func TestRunReturnsConfigurationErrors(t *testing.T) {
-	if _, err := run(t, context.Background(), fakeReader{err: errors.New("E-CAF-2: unreadable")}); err == nil {
+	if _, err := run(t, context.Background(), fakeReader{err: errors.New("unreadable")}); err == nil {
 		t.Fatal("expected the configuration error")
 	}
 }

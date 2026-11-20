@@ -106,6 +106,24 @@ func TestLayersDependInward(t *testing.T) {
 	}
 }
 
+// TestDomainsReferToOtherDomainsThroughServiceAndDomain checks with archunit that a domain uses another domain only through its application service and its domain classes, never through its port or its adapters. The root package wires the adapters of each domain.
+func TestDomainsReferToOtherDomainsThroughServiceAndDomain(t *testing.T) {
+	arch := architecture(t)
+	allDomains := domains(t)
+	for _, domain := range allDomains {
+		layers := archunit.Layers(layer(domain, "Domain"), layer(domain, "Port"), layer(domain, "Service"), layer(domain, "Adapter"))
+		for _, other := range allDomains {
+			if other == domain {
+				continue
+			}
+			rule := layers.ShouldNotRefer(archunit.Layers(layer(other, "Port"), layer(other, "Adapter")))
+			if err := arch.Validate(rule); err != nil {
+				t.Errorf("%s refers to %s through its port or adapter: %v", domain, other, err)
+			}
+		}
+	}
+}
+
 // TestInnerLayersAvoidInputOutput checks with go/parser that the domain, the port, and the service of each domain avoid os and net, such as os/exec and net/http. archunit applies its rules to module packages only, so this test reads the imports of each file.
 func TestInnerLayersAvoidInputOutput(t *testing.T) {
 	for _, domain := range domains(t) {

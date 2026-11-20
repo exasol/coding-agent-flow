@@ -44,7 +44,7 @@ func (Reader) ValidationSelection(_ context.Context, targetProject global.Target
 	path := filepath.Join(targetProject.Path(), FileName)
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, exaerror.New("E-CAF-2").
+		return nil, exaerror.New("E-CAF-5").
 			Message("Failed to read the CAF configuration {{path}}: {{error|uq}}.").
 			Parameter("path", path).
 			Parameter("error", err).
@@ -52,7 +52,7 @@ func (Reader) ValidationSelection(_ context.Context, targetProject global.Target
 	}
 	selection, err := parse(content)
 	if err != nil {
-		return nil, exaerror.New("E-CAF-3").
+		return nil, exaerror.New("E-CAF-6").
 			Message("Invalid CAF configuration {{path}}: {{error|uq}}.").
 			Parameter("path", path).
 			Parameter("error", err).

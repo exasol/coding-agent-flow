@@ -23,22 +23,18 @@ const (
 
 // OFTTracing creates an OFT Feature that needs an OFT Requirement and, for valid tracing, the OFT Requirement that covers it.
 func OFTTracing(valid bool) []acceptance.File {
-	files := []acceptance.File{{Path: "features.md", Content: fmt.Sprintf(featureTemplate, "feat~fixture-feature~1")}}
+	files := []acceptance.File{acceptance.NewFile("features.md", featureTemplate, "feat~fixture-feature~1")}
 	if valid {
-		files = append(files, acceptance.File{Path: "requirements.md", Content: fmt.Sprintf(requirementTemplate, "req~fixture-requirement~1", "feat~fixture-feature~1")})
+		files = append(files, acceptance.NewFile("requirements.md", requirementTemplate, "req~fixture-requirement~1", "feat~fixture-feature~1"))
 	}
 	return files
-}
-
-func TargetProject(t *testing.T, files []acceptance.File) codingagentflow.TargetProject {
-	return codingagentflow.NewTargetProject(acceptance.WriteFiles(t, files))
 }
 
 // Run runs the Validation Runner for a target-project fixture with one or more files.
 func Run(t *testing.T, files []acceptance.File, then func(codingagentflow.ValidationReport) error) {
 	t.Helper()
 	runner := codingagentflow.NewValidationRunner()
-	acceptance.Run(t, files, TargetProject, runner.Run, then)
+	acceptance.Run(t, files, acceptance.TargetProject, runner.Run, then)
 }
 
 // Summary lists the results of a report as "validation: status".
