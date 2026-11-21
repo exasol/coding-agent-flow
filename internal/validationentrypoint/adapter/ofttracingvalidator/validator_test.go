@@ -3,7 +3,10 @@ package ofttracingvalidator
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
+
+	exaerror "github.com/exasol/error-reporting-go"
 
 	"github.com/exasol/coding-agent-flow/internal/global"
 	oftdomain "github.com/exasol/coding-agent-flow/internal/oftvalidation/domain"
@@ -34,11 +37,22 @@ func TestValidatePassesForValidTracingAndReportsInvalidTracing(t *testing.T) {
 	}
 }
 
-func TestValidateReturnsTracingErrors(t *testing.T) {
+// A tracing error starts with the error code E-CAF-12 and keeps its cause in the error chain.
+func TestValidateReturnsTracingErrorsWithTheErrorCode(t *testing.T) {
 	var path string
-	validator := NewValidator(fakeTracingValidator{err: errors.New("run OpenFastTrace: missing JAR"), path: &path})
+	cause := errors.New("run OpenFastTrace: exec: \"java\": executable file not found in $PATH")
+	validator := NewValidator(fakeTracingValidator{err: cause, path: &path})
 
-	if _, err := validator.Validate(context.Background(), global.NewTargetProject("project")); err == nil {
-		t.Fatal("expected the tracing error")
+	_, err := validator.Validate(context.Background(), global.NewTargetProject("project"))
+
+	var exaError *exaerror.ExaError
+	if !errors.As(err, &exaError) || !strings.HasPrefix(exaError.Error(), "E-CAF-12: ") {
+		t.Fatalf("expected E-CAF-12 first in the error chain, got %v", err)
+	}
+	if strings.Contains(exaError.Error(), "executable file not found") {
+		t.Errorf("the error code message holds details of the cause: %v", exaError)
+	}
+	if !errors.Is(err, cause) {
+		t.Errorf("expected the cause in the error chain, got %v", err)
 	}
 }

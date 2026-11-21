@@ -56,7 +56,7 @@ Rationale: The default check is fast and independent of the network, and the cal
 
 `req~validation-selection~1`
 
-CAF runs each validation that the Target Project selects and returns a `ValidationReport` with one result per selected validation, in the selected order. CAF reports a tool failure for an unknown validation.
+CAF runs each validation that the Target Project selects and returns a `ValidationReport` with one result per selected validation, in the selected order. CAF reports a tool failure for an unknown validation and for a failed validation, with the error code of the failure.
 
 Covers:
 

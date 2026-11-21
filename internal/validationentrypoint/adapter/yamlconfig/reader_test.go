@@ -53,6 +53,29 @@ func TestValidationSelectionRefusesInvalidConfigurations(t *testing.T) {
 	}
 }
 
+// The error describes an invalid configuration by kind and line, so a credential in .caf.yaml stays out of CLI and hook
+// output.
+func TestValidationSelectionKeepsConfigurationContentOutOfTheError(t *testing.T) {
+	const secret = "ghp_FakeSecret0123456789"
+	for name, test := range map[string]struct{ content, message string }{
+		"value of the wrong type": {"version: " + secret + "\nvalidators: [a]\n", "line 1: the value has the wrong type"},
+		"unknown field":           {"version: 1\nvalidators: [a]\n" + secret + ": true\n", "line 3: the field is unknown"},
+		"repeated field":          {"version: 1\nversion: " + secret + "\nvalidators: [a]\n", "line 2: the field appears twice"},
+		"invalid syntax":          {"version: 1\nvalidators: [" + secret + "\n", "the YAML syntax is invalid"},
+		"unknown anchor":          {"version: 1\nvalidators: [*" + secret + "]\n", "the YAML syntax is invalid"},
+		"repeated validator":      {"version: 1\nvalidators: [" + secret + ", " + secret + "]\n", "validator 2 repeats validator 1"},
+		"empty file":              {"", "the file is empty"},
+	} {
+		_, err := selection(t, test.content)
+
+		if err == nil || !strings.Contains(err.Error(), "E-CAF-6") || !strings.Contains(err.Error(), test.message) {
+			t.Errorf("%s: expected E-CAF-6 with %q, got %v", name, test.message, err)
+		} else if strings.Contains(err.Error(), secret[:4]) {
+			t.Errorf("%s: the error contains the configuration content: %v", name, err)
+		}
+	}
+}
+
 // .caf.yaml is a regular file in the Target Project root; a symbolic link or a directory is a configuration error.
 func TestValidationSelectionRequiresARegularFile(t *testing.T) {
 	for name, create := range map[string]func(t *testing.T, path string){

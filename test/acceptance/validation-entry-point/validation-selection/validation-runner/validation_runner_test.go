@@ -2,7 +2,9 @@ package validationrunner
 
 import (
 	"fmt"
+	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	codingagentflow "github.com/exasol/coding-agent-flow"
@@ -48,6 +50,29 @@ func TestValidationRunner_unknownValidation(t *testing.T) {
 			}
 			if unknown, _ := report.Result("unknown-check"); unknown.Code() != "CAF-UNKNOWN-VALIDATOR" {
 				return fmt.Errorf("code of unknown-check: got %q, want CAF-UNKNOWN-VALIDATOR", unknown.Code())
+			}
+			return nil
+		},
+	)
+}
+
+// [at -> scn~validation-runner_failed-validation~1]
+func TestValidationRunner_failedValidation(t *testing.T) {
+	// OpenFastTrace cannot run with a configured JAR that does not exist.
+	t.Setenv("OPENFASTTRACE_JAR", filepath.Join(t.TempDir(), "missing.jar"))
+
+	validationentrypoint.Run(t, project(true, "oft-tracing-validator"),
+		func(report codingagentflow.ValidationReport) error {
+			if err := expectResults("oft-tracing-validator: tool_failure")(report); err != nil {
+				return err
+			}
+			failed, _ := report.Result("oft-tracing-validator")
+			if failed.Code() != "CAF-VALIDATION-FAILED" || !strings.Contains(failed.Message(), "E-CAF-12") {
+				return fmt.Errorf("result of oft-tracing-validator: got %q %q, want CAF-VALIDATION-FAILED with E-CAF-12", failed.Code(), failed.Message())
+			}
+			// The report holds no details of the cause, such as the path of the JAR, so a caller can print and log it.
+			if printed := fmt.Sprintf("%+v", report); strings.Contains(printed, "missing.jar") {
+				return fmt.Errorf("the report contains the cause: %s", printed)
 			}
 			return nil
 		},

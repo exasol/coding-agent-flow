@@ -2,9 +2,7 @@ package domain
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
-	"unicode/utf8"
 )
 
 func result(validation string, status ValidationStatus) ValidationResult {
@@ -68,27 +66,6 @@ func TestValidationReportUsesThePublishedResponseFormat(t *testing.T) {
 	want := `{"status":"pass","results":[{"validation":"oft-tracing-validator","status":"pass","code":"CAF-OFT-TRACING-VALID","message":"valid"}]}`
 	if string(encoded) != want {
 		t.Fatalf("got %s, want %s", encoded, want)
-	}
-}
-
-// Diagnostics are internal: the JSON response holds the code and the message.
-func TestDiagnosticsStayOutOfTheJSONResponse(t *testing.T) {
-	result := NewValidationResult("check", ToolFailure, "CODE", "The validator failed.").WithDiagnostics("secret /home/user/project")
-
-	output, err := json.Marshal(NewValidationReport([]ValidationResult{result}))
-
-	if err != nil || strings.Contains(string(output), "secret") {
-		t.Fatalf("expected JSON without diagnostics, got %s, %v", output, err)
-	}
-}
-
-func TestDiagnosticsKeepTheFirstBytes(t *testing.T) {
-	long := strings.Repeat("ä", MaximumDiagnosticsSize)
-
-	diagnostics := NewValidationResult("check", ToolFailure, "CODE", "message").WithDiagnostics(long).Diagnostics()
-
-	if len(diagnostics) > MaximumDiagnosticsSize || !utf8.ValidString(diagnostics) || !strings.HasPrefix(long, diagnostics) || diagnostics == "" {
-		t.Fatalf("expected at most %d bytes of valid UTF-8 from the start, got %d bytes", MaximumDiagnosticsSize, len(diagnostics))
 	}
 }
 

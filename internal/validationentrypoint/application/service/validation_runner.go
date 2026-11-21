@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
+	"unicode/utf8"
 
 	exaerror "github.com/exasol/error-reporting-go"
 
@@ -21,8 +23,11 @@ const (
 	MismatchingValidationCode = "CAF-VALIDATION-NAME-MISMATCH"
 )
 
+// MaximumDiagnosticsSize limits the diagnostics that the Validation Runner records for one Validation, in bytes.
+const MaximumDiagnosticsSize = 8 << 10
+
 // failedValidationMessage is the message of a failed Validation. Tool errors can hold file paths and command output, so
-// the message names only the error code, and the error text goes to the diagnostics of the result.
+// the message names only the error code, and the error text goes to the DiagnosticsSink.
 const failedValidationMessage = "The validator failed."
 
 // errorCodePattern matches the error code at the start of an ExaError text, such as E-CAF-5.
@@ -40,20 +45,28 @@ func failureMessage(err error) string {
 }
 
 type ValidationRunner struct {
-	reader     port.ConfigurationReader
-	validators map[string]port.Validator
+	reader      port.ConfigurationReader
+	validators  map[string]port.Validator
+	diagnostics port.DiagnosticsSink
 }
 
+// discardedDiagnostics is the DiagnosticsSink of a new ValidationRunner.
+type discardedDiagnostics struct{}
+
+func (discardedDiagnostics) Record(string, string) {}
+
 // NewValidationRunner creates a ValidationRunner that reads the Validation Selection with reader and runs the validators.
-// Each validator needs a unique, non-empty name, so each selected name runs exactly the wired validator.
+// Each validator needs a unique, non-empty name without leading or trailing whitespace, the form the ConfigurationReader
+// gives the selected names, so each selected name runs exactly the wired validator.
 func NewValidationRunner(reader port.ConfigurationReader, validators ...port.Validator) (ValidationRunner, error) {
 	byName := make(map[string]port.Validator, len(validators))
 	for _, validator := range validators {
 		name := validator.Name()
-		if name == "" {
+		if name == "" || strings.TrimSpace(name) != name {
 			return ValidationRunner{}, exaerror.New("E-CAF-7").
-				Message("A validator of the Validation Runner has an empty name.").
-				Mitigation("Give each validator a unique name.")
+				Message("A validator of the Validation Runner has the invalid name {{name}}.").
+				Parameter("name", name).
+				Mitigation("Give each validator a unique, non-empty name without leading or trailing whitespace.")
 		}
 		if _, duplicate := byName[name]; duplicate {
 			return ValidationRunner{}, exaerror.New("E-CAF-8").
@@ -63,7 +76,13 @@ func NewValidationRunner(reader port.ConfigurationReader, validators ...port.Val
 		}
 		byName[name] = validator
 	}
-	return ValidationRunner{reader: reader, validators: byName}, nil
+	return ValidationRunner{reader: reader, validators: byName, diagnostics: discardedDiagnostics{}}, nil
+}
+
+// WithDiagnosticsSink returns the runner with the sink that receives the raw cause of each tool failure.
+func (runner ValidationRunner) WithDiagnosticsSink(sink port.DiagnosticsSink) ValidationRunner {
+	runner.diagnostics = sink
+	return runner
 }
 
 // Run runs each selected Validation in the selected order and returns the Validation Report.
@@ -95,11 +114,23 @@ func (runner ValidationRunner) run(ctx context.Context, targetProject global.Tar
 	}
 	result, err := validator.Validate(ctx, targetProject)
 	if err != nil {
-		return domain.NewValidationResult(name, domain.ToolFailure, FailedValidationCode, failureMessage(err)).WithDiagnostics(err.Error())
+		runner.record(name, err.Error())
+		return domain.NewValidationResult(name, domain.ToolFailure, FailedValidationCode, failureMessage(err))
 	}
 	if result.Validation() != name {
-		return domain.NewValidationResult(name, domain.ToolFailure, MismatchingValidationCode, "The validator returned a result for another validation.").
-			WithDiagnostics(fmt.Sprintf("selected %q, returned %q", name, result.Validation()))
+		runner.record(name, fmt.Sprintf("selected %q, returned %q", name, result.Validation()))
+		return domain.NewValidationResult(name, domain.ToolFailure, MismatchingValidationCode, "The validator returned a result for another validation.")
 	}
 	return result
+}
+
+// record passes the first MaximumDiagnosticsSize bytes of the diagnostics, as valid UTF-8, to the DiagnosticsSink.
+func (runner ValidationRunner) record(name, diagnostics string) {
+	if len(diagnostics) > MaximumDiagnosticsSize {
+		diagnostics = diagnostics[:MaximumDiagnosticsSize]
+		for !utf8.ValidString(diagnostics) {
+			diagnostics = diagnostics[:len(diagnostics)-1]
+		}
+	}
+	runner.diagnostics.Record(name, diagnostics)
 }

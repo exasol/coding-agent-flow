@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	exaerror "github.com/exasol/error-reporting-go"
@@ -119,30 +120,62 @@ func parse(content []byte) ([]string, error) {
 	decoder.KnownFields(true)
 	var result configuration
 	if err := decoder.Decode(&result); err != nil {
-		return nil, err
+		return nil, schemaError(err)
 	}
 	var extra any
 	if err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {
 		return nil, errors.New("the file has more than one YAML document")
 	}
 	if result.Version != currentVersion {
-		return nil, fmt.Errorf("version %d is unsupported", result.Version)
+		return nil, errors.New("the version is unsupported")
 	}
 	if len(result.Validators) == 0 {
 		return nil, errors.New("the file selects no validator")
 	}
-	seen := make(map[string]bool, len(result.Validators))
+	positions := make(map[string]int, len(result.Validators))
 	selection := make([]string, 0, len(result.Validators))
 	for index, name := range result.Validators {
 		name = strings.TrimSpace(name)
 		if name == "" {
 			return nil, fmt.Errorf("validator %d has no name", index+1)
 		}
-		if seen[name] {
-			return nil, fmt.Errorf("validator %q appears twice", name)
+		if first, found := positions[name]; found {
+			return nil, fmt.Errorf("validator %d repeats validator %d", index+1, first)
 		}
-		seen[name] = true
+		positions[name] = index + 1
 		selection = append(selection, name)
 	}
 	return selection, nil
+}
+
+// parserLine finds the line number at the start of a YAML parser message.
+var parserLine = regexp.MustCompile(`^(?:yaml: )?line (\d+):`)
+
+// schemaError describes a YAML decoding error by its kind and line only. The public message contains no content of
+// .caf.yaml, because parser messages quote keys and values, and a value can be a credential.
+func schemaError(err error) error {
+	if errors.Is(err, io.EOF) {
+		return errors.New("the file is empty")
+	}
+	var typeError *yaml.TypeError
+	if !errors.As(err, &typeError) || len(typeError.Errors) == 0 {
+		return errors.New(atLine(err.Error()) + "the YAML syntax is invalid")
+	}
+	problem := typeError.Errors[0]
+	switch {
+	case strings.Contains(problem, "not found in type"):
+		return errors.New(atLine(problem) + "the field is unknown")
+	case strings.Contains(problem, "already defined"):
+		return errors.New(atLine(problem) + "the field appears twice")
+	default:
+		return errors.New(atLine(problem) + "the value has the wrong type")
+	}
+}
+
+// atLine returns the "line n: " prefix of a parser message, or an empty string for a message without a line.
+func atLine(message string) string {
+	if match := parserLine.FindStringSubmatch(message); match != nil {
+		return "line " + match[1] + ": "
+	}
+	return ""
 }

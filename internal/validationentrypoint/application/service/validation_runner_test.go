@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	exaerror "github.com/exasol/error-reporting-go"
 
@@ -43,7 +45,20 @@ func (validator fakeValidator) Validate(context.Context, global.TargetProject) (
 	return domain.NewValidationResult(resultName, validator.status, "CODE", "message"), validator.err
 }
 
+// recordingSink keeps the diagnostics of each Validation.
+type recordingSink map[string]string
+
+func (sink recordingSink) Record(validation, diagnostics string) {
+	sink[validation] = diagnostics
+}
+
 func run(t *testing.T, ctx context.Context, reader fakeReader) (domain.ValidationReport, error) {
+	report, _, err := runRecording(t, ctx, reader)
+	return report, err
+}
+
+// runRecording runs the fake validators and returns the diagnostics that the DiagnosticsSink receives.
+func runRecording(t *testing.T, ctx context.Context, reader fakeReader) (domain.ValidationReport, recordingSink, error) {
 	t.Helper()
 	runner, err := NewValidationRunner(reader,
 		fakeValidator{name: "passing", status: domain.Pass},
@@ -53,7 +68,9 @@ func run(t *testing.T, ctx context.Context, reader fakeReader) (domain.Validatio
 	if err != nil {
 		t.Fatal(err)
 	}
-	return runner.Run(ctx, global.NewTargetProject("project"))
+	sink := recordingSink{}
+	report, err := runner.WithDiagnosticsSink(sink).Run(ctx, global.NewTargetProject("project"))
+	return report, sink, err
 }
 
 func summary(report domain.ValidationReport) []string {
@@ -91,20 +108,59 @@ func TestRunReportsUnknownValidationsAndValidationErrorsAsToolFailures(t *testin
 	}
 }
 
-// A validator error can hold file paths and tool output, so the result has a fixed message and keeps the error in the
-// diagnostics.
-func TestRunKeepsValidatorErrorsOutOfTheMessage(t *testing.T) {
-	report, err := run(t, context.Background(), fakeReader{selection: []string{"failing"}})
+// A validator error can hold file paths, tool output, and credentials, so the DiagnosticsSink receives it, and no public
+// form of the report contains it: not the JSON response, not the accessors, and not generic formatting.
+func TestRunKeepsValidatorErrorsOutOfThePublicReport(t *testing.T) {
+	const secret = "ghp_FakeSecret0123456789"
+	cause := errors.New("broken at /home/user/project/.env with token " + secret)
+	runner, err := NewValidationRunner(fakeReader{selection: []string{"failing"}}, fakeValidator{name: "failing", err: cause})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink := recordingSink{}
+
+	report, err := runner.WithDiagnosticsSink(sink).Run(context.Background(), global.NewTargetProject("project"))
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	failing, _ := report.Result("failing")
-	if strings.Contains(failing.Message(), "secret") || failing.Message() == "" {
-		t.Errorf("expected a fixed message without the validator error, got %q", failing.Message())
+	encoded, err := json.Marshal(report)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if failing.Diagnostics() != "broken at /home/user/project/secret.md" {
-		t.Errorf("expected the validator error in the diagnostics, got %q", failing.Diagnostics())
+	failing, _ := report.Result("failing")
+	for form, text := range map[string]string{
+		"JSON":      string(encoded),
+		"%v":        fmt.Sprintf("%v", report),
+		"%+v":       fmt.Sprintf("%+v", report),
+		"%#v":       fmt.Sprintf("%#v", report),
+		"accessors": failing.Validation() + failing.Code() + failing.Message() + string(failing.Status()),
+	} {
+		if strings.Contains(text, secret[:4]) || strings.Contains(text, ".env") {
+			t.Errorf("%s contains the validator error: %s", form, text)
+		}
+	}
+	if sink["failing"] != cause.Error() {
+		t.Errorf("expected the validator error in the DiagnosticsSink, got %q", sink["failing"])
+	}
+}
+
+// The DiagnosticsSink receives at most MaximumDiagnosticsSize bytes of valid UTF-8 from the start of the error.
+func TestRunRecordsTheFirstBytesOfTheDiagnostics(t *testing.T) {
+	long := strings.Repeat("ä", MaximumDiagnosticsSize)
+	runner, err := NewValidationRunner(fakeReader{selection: []string{"failing"}}, fakeValidator{name: "failing", err: errors.New(long)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink := recordingSink{}
+
+	if _, err := runner.WithDiagnosticsSink(sink).Run(context.Background(), global.NewTargetProject("project")); err != nil {
+		t.Fatal(err)
+	}
+
+	diagnostics := sink["failing"]
+	if len(diagnostics) > MaximumDiagnosticsSize || !utf8.ValidString(diagnostics) || !strings.HasPrefix(long, diagnostics) || diagnostics == "" {
+		t.Fatalf("expected at most %d bytes of valid UTF-8 from the start, got %d bytes", MaximumDiagnosticsSize, len(diagnostics))
 	}
 }
 
@@ -123,14 +179,19 @@ func TestRunStopsWhenCancelled(t *testing.T) {
 	}
 }
 
-// Each validator has a unique, non-empty name, so each selected name runs exactly the wired validator.
-func TestNewValidationRunnerRejectsEmptyAndDuplicateNames(t *testing.T) {
+// Each validator has a unique, non-empty name without leading or trailing whitespace, so each selected name runs
+// exactly the wired validator.
+func TestNewValidationRunnerRejectsInvalidAndDuplicateNames(t *testing.T) {
 	for name, test := range map[string]struct {
 		validators []fakeValidator
 		want       string
 	}{
-		"empty name":     {[]fakeValidator{{name: ""}}, "E-CAF-7"},
-		"duplicate name": {[]fakeValidator{{name: "check", status: domain.Pass}, {name: "check", status: domain.Finding}}, "E-CAF-8"},
+		"empty name":               {[]fakeValidator{{name: ""}}, "E-CAF-7"},
+		"whitespace only":          {[]fakeValidator{{name: "  "}}, "E-CAF-7"},
+		"leading whitespace":       {[]fakeValidator{{name: " check"}}, "E-CAF-7"},
+		"trailing whitespace":      {[]fakeValidator{{name: "check\t"}}, "E-CAF-7"},
+		"duplicate name":           {[]fakeValidator{{name: "check", status: domain.Pass}, {name: "check", status: domain.Finding}}, "E-CAF-8"},
+		"duplicate after trimming": {[]fakeValidator{{name: "check", status: domain.Pass}, {name: " check ", status: domain.Finding}}, "E-CAF-7"},
 	} {
 		validators := make([]port.Validator, 0, len(test.validators))
 		for _, validator := range test.validators {
@@ -152,8 +213,9 @@ func TestRunReportsAResultUnderAnotherNameAsToolFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sink := recordingSink{}
 
-	report, err := runner.Run(context.Background(), global.NewTargetProject("project"))
+	report, err := runner.WithDiagnosticsSink(sink).Run(context.Background(), global.NewTargetProject("project"))
 
 	if err != nil {
 		t.Fatal(err)
@@ -161,8 +223,8 @@ func TestRunReportsAResultUnderAnotherNameAsToolFailure(t *testing.T) {
 	if want := []string{"check: tool_failure " + MismatchingValidationCode}; !reflect.DeepEqual(summary(report), want) {
 		t.Fatalf("got %v, want %v", summary(report), want)
 	}
-	if check, _ := report.Result("check"); !strings.Contains(check.Diagnostics(), "other") {
-		t.Errorf("expected the returned name in the diagnostics, got %q", check.Diagnostics())
+	if !strings.Contains(sink["check"], "other") {
+		t.Errorf("expected the returned name in the diagnostics, got %q", sink["check"])
 	}
 }
 
@@ -220,7 +282,7 @@ func (validator *recordingValidator) Validate(context.Context, global.TargetProj
 	return domain.NewValidationResult(validator.name, domain.Pass, "CODE", "message"), nil
 }
 
-// The message of a failed validator names the E-CAF code of its error, and the error text stays in the diagnostics.
+// The message of a failed validator names the E-CAF code of its error, and the DiagnosticsSink receives the error text.
 func TestRunNamesTheErrorCodeOfAFailedValidator(t *testing.T) {
 	for name, test := range map[string]struct {
 		err  error
@@ -234,12 +296,13 @@ func TestRunNamesTheErrorCodeOfAFailedValidator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		sink := recordingSink{}
 
-		report, err := runner.Run(context.Background(), global.NewTargetProject("project"))
+		report, err := runner.WithDiagnosticsSink(sink).Run(context.Background(), global.NewTargetProject("project"))
 
 		failing, _ := report.Result("failing")
-		if err != nil || failing.Message() != test.want || failing.Code() != FailedValidationCode || failing.Diagnostics() != test.err.Error() {
-			t.Errorf("%s: got %q %q, diagnostics %q, %v; want %q", name, failing.Code(), failing.Message(), failing.Diagnostics(), err, test.want)
+		if err != nil || failing.Message() != test.want || failing.Code() != FailedValidationCode || sink["failing"] != test.err.Error() {
+			t.Errorf("%s: got %q %q, diagnostics %q, %v; want %q", name, failing.Code(), failing.Message(), sink["failing"], err, test.want)
 		}
 	}
 }

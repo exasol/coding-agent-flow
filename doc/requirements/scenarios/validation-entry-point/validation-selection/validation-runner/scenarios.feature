@@ -25,6 +25,17 @@ Feature: Validation Runner
     Then the ValidationReport response lists the results `[oft-tracing-validator: pass, unknown-check: tool_failure]`
     And the result of `unknown-check` has code `CAF-UNKNOWN-VALIDATOR`
 
+  @id:scn~validation-runner_failed-validation~1
+  # Covers: req~validation-selection~1
+  # Needs: at
+  Scenario: Report a tool failure with the error code for a failed validation
+    Given a target project path whose `.caf.yaml` selects `[oft-tracing-validator]`
+    And OpenFastTrace cannot run
+    When the caller runs the validations of the target project path
+    Then the ValidationReport response lists the results `[oft-tracing-validator: tool_failure]`
+    And the result of `oft-tracing-validator` has code `CAF-VALIDATION-FAILED` and a message with `E-CAF-12`
+    And the ValidationReport response holds no details of the cause
+
   @id:scn~validation-runner_overall-result~1
   # Covers: req~validation-result~1
   # Needs: at

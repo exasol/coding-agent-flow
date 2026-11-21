@@ -20,7 +20,7 @@ func TestLocateJarReportsAMissingConfiguredJar(t *testing.T) {
 	}
 }
 
-// The download error keeps the first maximumDiagnosticsSize bytes of the Maven output.
+// Regression: the download error keeps the first maximumDiagnosticsSize bytes of the Maven output.
 func TestLocateJarKeepsTheFirstMavenOutput(t *testing.T) {
 	directory := t.TempDir()
 	script := "#!/bin/sh\nhead -c 100000 /dev/zero | tr '\\0' m\nexit 1\n"
@@ -69,7 +69,7 @@ func TestLocateJarAcceptsAConfiguredJarOfTheSupportedVersion(t *testing.T) {
 	}
 }
 
-// A configured JAR of another OpenFastTrace version is refused.
+// Regression: a configured JAR of another OpenFastTrace version is refused.
 func TestLocateJarRefusesAConfiguredJarOfAnotherVersion(t *testing.T) {
 	configuredJar(t, "OpenFastTrace 4.10.0", 0)
 
@@ -82,7 +82,7 @@ func TestLocateJarRefusesAConfiguredJarOfAnotherVersion(t *testing.T) {
 	}
 }
 
-// A configured JAR that reports no OpenFastTrace version or fails is refused.
+// Regression: a configured JAR that reports no OpenFastTrace version or fails is refused.
 func TestLocateJarRefusesAnUnrelatedConfiguredJar(t *testing.T) {
 	for name, test := range map[string]struct {
 		output   string
@@ -159,7 +159,7 @@ func recordedCalls(t *testing.T, calls string) string {
 	return string(content)
 }
 
-// When the JAR is missing, Maven downloads it into the repository that CAF passes explicitly.
+// Regression: when the JAR is missing, Maven downloads it into the repository that CAF passes explicitly.
 func TestLocateJarInRepositoryDownloadsIntoTheGivenRepository(t *testing.T) {
 	repository := t.TempDir()
 	calls := fakeMaven(t, true, 0)
@@ -224,7 +224,7 @@ func TestLocateJarUsesTheMavenRepositoryInTheHomeDirectory(t *testing.T) {
 	}
 }
 
-// Maven runs in an empty directory outside the current working directory, so a Target Project's
+// Regression: Maven runs in an empty directory outside the current working directory, so a Target Project's
 // .mvn/maven.config, .mvn/extensions.xml, or pom.xml can't change the download command or load build extensions.
 func TestLocateJarInRepositoryRunsMavenOutsideTheWorkingDirectory(t *testing.T) {
 	project := t.TempDir()

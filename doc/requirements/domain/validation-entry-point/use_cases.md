@@ -14,6 +14,6 @@ The Validation Runner reports an Unknown Validation as `tool_failure` with the c
 
 | Validation Name | Result |
 | --- | --- |
-| `oft-tracing-validator` | `pass` when the OFT Tracing Validator reports valid tracing, `finding` otherwise |
+| `oft-tracing-validator` | `pass` when the OFT Tracing Validator reports valid tracing, `finding` otherwise; `tool_failure` with `CAF-VALIDATION-FAILED` and `E-CAF-12` when OpenFastTrace cannot run |
 
 Scenarios: [Validation Runner](../../scenarios/validation-entry-point/validation-selection/validation-runner/)
