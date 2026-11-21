@@ -6,11 +6,14 @@ require (
 	github.com/exasol/error-reporting-go v0.2.1
 	// Test-only dependency: internal/architecture_test.go uses archunit.
 	github.com/kcmvp/archunit v0.2.0-alpha1
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 // Test-only dependencies of archunit.
 require (
 	github.com/fatih/color v1.17.0 // indirect
+	// Test-only dependency of gopkg.in/yaml.v3.
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/samber/lo v1.51.0 // indirect

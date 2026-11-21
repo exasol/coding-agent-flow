@@ -106,6 +106,43 @@ func TestLayersDependInward(t *testing.T) {
 	}
 }
 
+// archunit checks how a domain uses another one, here the validation entry point uses OFT validation.
+//
+// Open Host Service: the root package passes the OFT application service to the adapter.
+//
+//	ofttracingvalidator.NewValidator(NewOFTTracingValidator())
+//
+// Published Language and Anti-Corruption Layer: the adapter receives OFTValidation and maps it to ValidationResult.
+//
+//	validation, err := validator.validator.Validate(ctx, targetProject)
+//	if !validation.Valid() {
+//		return domain.NewValidationResult(Name, domain.Finding, InvalidCode, "...")
+//	}
+//
+// Service and domain of the validation entry point work with ValidationResult only.
+func TestDomainsReferToOtherDomainsThroughAdapters(t *testing.T) {
+	arch := architecture(t)
+	allDomains := domains(t)
+	for _, domain := range allDomains {
+		for _, other := range allDomains {
+			if other == domain {
+				continue
+			}
+			rules := map[string]archunit.Rule{
+				"domain, port, and service use only their own domain": archunit.Layers(layer(domain, "Domain"), layer(domain, "Port"), layer(domain, "Service")).
+					ShouldNotRefer(archunit.Layers(layer(other, "Domain"), layer(other, "Port"), layer(other, "Service"), layer(other, "Adapter"))),
+				"adapter uses only the domain classes of another domain": archunit.Layers(layer(domain, "Adapter")).
+					ShouldNotRefer(archunit.Layers(layer(other, "Port"), layer(other, "Service"), layer(other, "Adapter"))),
+			}
+			for name, rule := range rules {
+				if err := arch.Validate(rule); err != nil {
+					t.Errorf("%s: %s: %v", domain, name, err)
+				}
+			}
+		}
+	}
+}
+
 // TestInnerLayersAvoidInputOutput checks with go/parser that the domain, the port, and the service of each domain avoid os and net, such as os/exec and net/http. archunit applies its rules to module packages only, so this test reads the imports of each file.
 func TestInnerLayersAvoidInputOutput(t *testing.T) {
 	for _, domain := range domains(t) {

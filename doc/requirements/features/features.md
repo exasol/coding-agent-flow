@@ -15,3 +15,11 @@ Needs: req
 CAF validates the code and documents of a Target Project and returns a validation result.
 
 Needs: req
+
+## Validation Entry Point
+
+`feat~validation-entry-point~1`
+
+CAF runs the validations a Target Project selects for coding agents and users and reports the result.
+
+Needs: req
