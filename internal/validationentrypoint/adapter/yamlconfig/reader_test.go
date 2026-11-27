@@ -77,6 +77,7 @@ func TestValidationSelectionKeepsConfigurationContentOutOfTheError(t *testing.T)
 }
 
 // .caf.yaml is a regular file in the Target Project root; a symbolic link or a directory is a configuration error.
+// [utest -> dsn~configuration-file~1]
 func TestValidationSelectionRequiresARegularFile(t *testing.T) {
 	for name, create := range map[string]func(t *testing.T, path string){
 		"symbolic link": func(t *testing.T, path string) {
@@ -106,6 +107,7 @@ func TestValidationSelectionRequiresARegularFile(t *testing.T) {
 }
 
 // .caf.yaml holds at most maximumFileSize bytes.
+// [utest -> dsn~configuration-file~1]
 func TestValidationSelectionLimitsTheFileSize(t *testing.T) {
 	valid := "version: 1\nvalidators: [a]\n"
 	padded := valid + strings.Repeat("#", maximumFileSize-len(valid))

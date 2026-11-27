@@ -2,7 +2,7 @@
 
 ## Validation Runner
 
-The CAF Caller supplies a Target Project Path. The Validation Runner reads the Validation Selection from `.caf.yaml` in the Target Project, runs each selected Validation, and returns a ValidationReport response. `.caf.yaml` is a regular file of at most 64 KiB in the Target Project root.
+The CAF Caller supplies a Target Project Path. The Validation Runner reads the Validation Selection from `.caf.yaml` in the Target Project root, runs each selected Validation, and returns a ValidationReport response.
 
 ```yaml
 version: 1

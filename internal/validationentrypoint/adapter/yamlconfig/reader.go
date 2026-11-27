@@ -65,6 +65,7 @@ func (Reader) ValidationSelection(_ context.Context, targetProject global.Target
 // file type before it opens the file, so a symbolic link, a FIFO, or a device stays unopened, and checks the opened file
 // again for a replacement in between.
 func read(path string) ([]byte, error) {
+	// [impl -> dsn~configuration-file~1]
 	info, err := os.Lstat(path)
 	if err != nil {
 		return nil, readError(path, err)

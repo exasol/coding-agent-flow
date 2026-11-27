@@ -62,7 +62,7 @@ Covers:
 
 - `feat~validation-entry-point~1`
 
-Needs: scn, impl, utest
+Needs: dsn, scn, impl, utest
 
 Rationale: Each Target Project chooses its validations, and new validations use the same entry point.
 
