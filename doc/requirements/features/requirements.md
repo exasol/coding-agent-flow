@@ -79,3 +79,31 @@ Covers:
 Needs: scn, impl, utest
 
 Rationale: Coding agents and users act on one clear result for all selected validations.
+
+## Agent Turn Validation
+
+`req~agent-turn-validation~1`
+
+When a coding agent is about to end its turn, CAF validates the Target Project and returns a `TurnDecision`. CAF lets the agent end its turn when validation passes, and asks the agent to continue with the reason when validation finds a problem or fails.
+
+Covers:
+
+- `feat~validation-entry-point~1`
+
+Needs: scn, impl, utest
+
+Rationale: The agent fixes validation problems before it hands over its work.
+
+## Agent Continuation Limit
+
+`req~agent-continuation-limit~1`
+
+CAF lets the agent end its turn when the turn already continued because of CAF.
+
+Covers:
+
+- `feat~validation-entry-point~1`
+
+Needs: scn, impl, utest
+
+Rationale: The agent and CAF stay out of an endless loop.

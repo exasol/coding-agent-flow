@@ -16,3 +16,4 @@ Initial release of coding-agent-flow.
 * #43: Code Implementation: OFT Tracing Validator
 * #45: Use Case: Link Checker
 * #49: Use Case: Validation Runner
+* #48: Use Case: Agent Turn Validator

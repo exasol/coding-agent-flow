@@ -33,13 +33,19 @@ const failedValidationMessage = "The validator failed."
 // errorCodePattern matches the error code at the start of an ExaError text, such as E-CAF-5.
 var errorCodePattern = regexp.MustCompile(`^[EWF]-[A-Z]+-[0-9]+`)
 
-// failureMessage names the error code of the first ExaError in the error chain, or returns failedValidationMessage.
-func failureMessage(err error) string {
+// errorCode returns the error code of the first ExaError in the error chain, or an empty string.
+func errorCode(err error) string {
 	var exaError *exaerror.ExaError
 	if errors.As(err, &exaError) {
-		if code := errorCodePattern.FindString(exaError.Error()); code != "" {
-			return "The validator failed with " + code + "."
-		}
+		return errorCodePattern.FindString(exaError.Error())
+	}
+	return ""
+}
+
+// failureMessage names the error code of the error, or returns failedValidationMessage.
+func failureMessage(err error) string {
+	if code := errorCode(err); code != "" {
+		return "The validator failed with " + code + "."
 	}
 	return failedValidationMessage
 }
