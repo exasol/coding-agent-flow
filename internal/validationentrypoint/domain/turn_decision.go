@@ -16,6 +16,8 @@ const (
 )
 
 // TurnDecision is the result of the Agent Turn Validator: the action, the reason, and the Validation Report.
+//
+// [impl -> dom~turn-decision~1]
 type TurnDecision struct {
 	action TurnAction
 	reason string
