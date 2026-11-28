@@ -2,6 +2,7 @@
 package validationentrypoint
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -30,6 +31,11 @@ func OFTTracing(valid bool) []acceptance.File {
 	return files
 }
 
+// Project creates .caf.yaml with the validations and OFT documents with valid or invalid tracing.
+func Project(validTracing bool, validations ...string) []acceptance.File {
+	return append([]acceptance.File{Configuration(validations...)}, OFTTracing(validTracing)...)
+}
+
 // Run runs the Validation Runner for a target-project fixture with one or more files.
 func Run(t *testing.T, files []acceptance.File, then func(codingagentflow.ValidationReport) error) {
 	t.Helper()
@@ -38,6 +44,29 @@ func Run(t *testing.T, files []acceptance.File, then func(codingagentflow.Valida
 		t.Fatal(err)
 	}
 	acceptance.Run(t, files, acceptance.TargetProject, runner.Run, then)
+}
+
+// Stop runs the Agent Turn Validator for a target-project fixture with a Stop Event that has the Continuation Active flag.
+func Stop(t *testing.T, files []acceptance.File, continuationActive bool, then func(codingagentflow.TurnDecision) error) {
+	t.Helper()
+	validator, err := codingagentflow.NewAgentTurnValidator()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stop := func(ctx context.Context, project codingagentflow.TargetProject) (codingagentflow.TurnDecision, error) {
+		return validator.Validate(ctx, codingagentflow.NewStopEvent(project, continuationActive))
+	}
+	acceptance.Run(t, files, acceptance.TargetProject, stop, then)
+}
+
+// ExpectDecision checks the action of a TurnDecision and that its reason contains the text.
+func ExpectDecision(action codingagentflow.TurnAction, reason string) func(codingagentflow.TurnDecision) error {
+	return func(decision codingagentflow.TurnDecision) error {
+		if decision.Action() != action || !strings.Contains(decision.Reason(), reason) {
+			return fmt.Errorf("decision: got %s %q, want %s with %q", decision.Action(), decision.Reason(), action, reason)
+		}
+		return nil
+	}
 }
 
 // Summary lists the results of a report as "validation: status".
