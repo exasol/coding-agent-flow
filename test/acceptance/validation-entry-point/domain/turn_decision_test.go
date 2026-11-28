@@ -1,5 +1,5 @@
-// Package turndecision checks the scenarios of turn_decision.feature on TurnDecision, without the service.
-package turndecision
+// Package domain proves the Gherkin scenarios of each domain class, such as turn_decision.feature, without the services.
+package domain
 
 import (
 	"strings"
