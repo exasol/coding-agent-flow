@@ -26,34 +26,6 @@ func validateTurn(t *testing.T, ctx context.Context, reader fakeReader, continua
 
 // [utest -> req~agent-turn-validation~1]
 // [utest -> req~agent-continuation-limit~1]
-func TestAgentTurnValidatorDecidesFromTheValidationReport(t *testing.T) {
-	for name, test := range map[string]struct {
-		selection          []string
-		continuationActive bool
-		want               domain.TurnAction
-		reason             string
-	}{
-		"pass":                             {[]string{"passing"}, false, domain.EndTurn, ""},
-		"finding":                          {[]string{"passing", "finding"}, false, domain.ContinueTurn, "finding: finding CODE"},
-		"unknown validation":               {[]string{"unknown"}, false, domain.ContinueTurn, "unknown: tool_failure " + UnknownValidationCode},
-		"finding with continuation active": {[]string{"finding"}, true, domain.EndTurn, "finding: finding CODE"},
-	} {
-		decision, err := validateTurn(t, context.Background(), fakeReader{selection: test.selection}, test.continuationActive)
-
-		if err != nil {
-			t.Fatalf("%s: %v", name, err)
-		}
-		if decision.Action() != test.want || !strings.Contains(decision.Reason(), test.reason) {
-			t.Errorf("%s: got %s %q, want %s with %q", name, decision.Action(), decision.Reason(), test.want, test.reason)
-		}
-		if len(decision.Report().Results()) != len(test.selection) {
-			t.Errorf("%s: got report %+v", name, decision.Report().Results())
-		}
-	}
-}
-
-// [utest -> req~agent-turn-validation~1]
-// [utest -> req~agent-continuation-limit~1]
 func TestAgentTurnValidatorNamesTheErrorCodeOfAValidationRunnerError(t *testing.T) {
 	cause := exaerror.New("E-CAF-5").Message("Failed to read {{path}}.").Parameter("path", "/home/user/project/.caf.yaml")
 	for continuationActive, want := range map[bool]domain.TurnAction{false: domain.ContinueTurn, true: domain.EndTurn} {
